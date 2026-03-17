@@ -1,0 +1,71 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Template Question Builder</title>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const templateBox = document.getElementById("template_text");
+        if (!templateBox) return;
+
+        templateBox.addEventListener("keydown", function (event) {
+          if (event.key !== "Tab") return;
+          event.preventDefault();
+
+          const start = templateBox.selectionStart;
+          const end = templateBox.selectionEnd;
+          const value = templateBox.value;
+          const tab = "    ";
+
+          templateBox.value = value.slice(0, start) + tab + value.slice(end);
+          templateBox.selectionStart = start + tab.length;
+          templateBox.selectionEnd = start + tab.length;
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Template Question Builder</h1>
+
+    {% if status_message %}
+    <p>{{ status_message }}</p>
+    {% endif %}
+
+    <form method="post">
+      <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <div>
+          <label for="question_name">Question Name</label><br />
+          <input id="question_name" name="question_name" type="text" size="60" value="{{ question_name }}" /><br /><br />
+
+          <label for="prompt_text">Prompt</label><br />
+          <textarea id="prompt_text" name="prompt_text" rows="4" cols="100">{{ prompt_text }}</textarea><br /><br />
+
+          <label for="template_text">Template Input</label><br />
+          <textarea id="template_text" name="template_text" rows="24" cols="100">{{ template_text }}</textarea><br /><br />
+
+          <input type="hidden" name="selected_question_id" value="{{ selected_question_id }}" />
+
+          <button type="submit" name="action" value="preview">Preview</button>
+          <button type="submit" name="action" value="save">Save</button>
+          <button type="submit" name="action" value="new">New Question</button>
+        </div>
+
+        <div>
+          <label for="chosen_question_id">Saved Questions</label><br />
+          <select id="chosen_question_id" name="chosen_question_id" size="20" style="width: 320px; overflow-y: auto;">
+            {% for item in saved_questions %}
+            <option value="{{ item.id }}" {% if item.id == selected_question_id %}selected{% endif %}>{{ item.name }}</option>
+            {% endfor %}
+          </select><br /><br />
+
+          <button type="submit" name="action" value="load">Load Selected</button>
+          <button type="submit" name="action" value="delete">Delete Selected</button>
+        </div>
+      </div>
+    </form>
+
+    <h2>Preview Output</h2>
+    <textarea rows="20" cols="140" readonly>{{ preview_output }}</textarea>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+UInt(name, minValue, maxValue)
+    - Generates a number randomly between min and maxValue (inclusive).
+    - Given no arguments, defaults to name="value", minValue=0, and maxValue=100
+LoopInt(name, startMin, startMax, endMin, endMax, stepMin, stepMax, allowDecrement)
+    - Randomizes loop start/end/step using the provided bounds.
+    - Creates a LoopIntValue with fields: name, start, end, step, operator, values, current.
+    - iterations equals the length of values (values are generated with range(start, end, step)).
+    - allowDecrement=True permits negative step values.
+nameGen(prefix)
+    - Returns a string like "var123" using the prefix (default prefix="var") for now
+    - TODO
+charGen(*exclude)
+    - Returns a random lowercase letter a-z.
+    - Excludes any single-character strings provided in exclude.
+greaterThan(base)
+    - Returns a random integer strictly greater than base.
+    - base can be an int or a UIntValue.
+lessThan(base)
+    - Returns a random integer strictly less than base.
+    - base can be an int or a UIntValue.
+choose((text, value), ...)
+    - Randomly selects one option and returns a ChoiceValue with .text and .value.
+    - Use .text in question/prompt and .value in Jinja conditionals.
+randomLoop(loopInt, *bodyLines)
+    - Returns a randomized C++ loop string using loopInt (for/while).
+    - Uses loopInt.operator and loopInt.step to format comparison and increment.
+combinations(formatString, *values, exclude=None)
+    - Renders all unique permutations into the Jinja formatString.
+    - exclude removes exact matches from the result list.
+loopPrint(formatString, *loopVars)
+    - Simulates nested loop execution in true nested order and returns the concatenated output.
+    - Supports up to 4 LoopIntValue arguments.
+    - Exposes loop variables by their loop name and by template varId if present.
