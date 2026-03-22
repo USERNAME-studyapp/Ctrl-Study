@@ -16,6 +16,7 @@ from pathlib import Path                                                        
 from typing import Any                                                          # Any is used for payload typing flexibility
 from flask import Flask, redirect, render_template, request, session, url_for   # Flask imports provide routing, form access, session state, and redirects
 from parser_engine import TemplateProcessingError, generateQuestion             # Parser imports provide generation and normalized error handling
+from supabase_client import FetchQuestionsTable                                 # Supabase client import provides database access for question records
 
 # app is the Flask application instance
 app = Flask(__name__)
@@ -140,6 +141,12 @@ def index() -> str:
     # Loads saved questions for sidebar display and operations
     savedQuestions = loadSavedQuestions()
 
+    # ==================== TEST-ONLY SUPABASE FETCH ====================
+    try:
+        supabaseQuestions = FetchQuestionsTable()
+    except Exception:
+        supabaseQuestions = [{"error": "Supabase fetch failed (TEST ONLY)"}]
+
     # Restores one-time state after redirect to prevent duplicate POST submits on refresh
     restoredState = session.pop("pageState", None)
     if isinstance(restoredState, dict):
@@ -263,6 +270,9 @@ def index() -> str:
         saved_questions=savedQuestions,
         preview_output=previewOutput,
         status_message=statusMessage,
+
+        #TESTING ONLY FOR DATABASE CONNECTION
+        supabase_questions=supabaseQuestions, 
     )
 
 

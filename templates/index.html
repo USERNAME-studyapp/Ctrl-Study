@@ -16,7 +16,7 @@
           const start = templateBox.selectionStart;
           const end = templateBox.selectionEnd;
           const value = templateBox.value;
-          const tab = "    ";
+          const tab = "\t";
 
           templateBox.value = value.slice(0, start) + tab + value.slice(end);
           templateBox.selectionStart = start + tab.length;
@@ -67,5 +67,8 @@
 
     <h2>Preview Output</h2>
     <textarea rows="20" cols="140" readonly>{{ preview_output }}</textarea>
+
+    <h3 style="color: #b30000; margin-top: 16px;">TEST SUPABASE QUESTIONS (DELETE ME)</h3>
+    <pre style="border: 2px dashed #b30000; padding: 12px; background: #fff7f7;">{{ supabase_questions | tojson(indent=2) }}</pre>
   </body>
 </html>

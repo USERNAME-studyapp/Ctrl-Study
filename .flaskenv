@@ -1,1 +1,3 @@
 FLASK_APP=ctrl.py
+SUPABASE_URL=https://trgolminctrbeeehdwsy.supabase.co
+SUPABASE_KEY=sb_publishable_W5jAHvkEjSycImOBtTl8rA_Fy2E8ess
