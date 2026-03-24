@@ -1,30 +1,30 @@
 [
   {
-    "id": "407d08c1-dbae-4fc9-a15d-11e44306079d",
+    "id": "0",
     "name": "Dangling Else Output",
     "templateText": "variables:\r\nvar1 = UInt(\"myNum\", 4, 10)\r\nvar2 = greaterThan(var1)\r\nout1 = UInt();\r\nout2 = UInt();\r\nout3 = UInt();\r\nout4 = UInt();\r\n\r\nquestion:\r\nint {{ var1.name }} = {{ var1 }};\r\nif ({{ var1.name }} < {{ var2 }})\r\n    if ({{ var1.name }} > {{ lessThan(var1) }})\r\n        if ({{ var1.name }} != {{ var1 }})\r\n            cout << \"{{ out1 }} \";\r\n        else\r\n            cout << \"{{ out2 }} \";\r\nelse\r\n        cout << \"{{ out3 }} \";\r\ncout << \"{{ out4 }} \";\r\n\r\nanswer:\r\n{{ out2 }} {{ out4 }}\r\n\r\nincorrect:\r\ncombinations(\"{{ x }} {{ y }}\", out1, out2, out3, out4)\r\ncombinations(\"{{ x }} {{ y }}\", out1, out2, out3, out4)\r\ncombinations(\"{{ x }} {{ y }}\", out1, out2, out3, out4)",
     "promptText": "What is the output of the following code?"
   },
   {
-    "id": "7851b252-c6d8-4f88-8835-55d1471fa8d2",
+    "id": "1",
     "name": "Simple Nested Loop Execution",
     "templateText": "variables:\r\nvar1 = LoopInt(\"x\", 1, 4, 8, 12, 1, 2, False)\r\nvar2 = LoopInt(\"y\", 1, 3, 3, 4, 1, 1, False)\r\n\r\nquestion:\r\nint {{ var1.name }} = {{ var1.start }};\r\nint {{ var2.name }};\r\nwhile({{ var1.name }} < {{ var1.end }}){\r\n    for({{ var2.name }} = {{ var2.start }}; {{ var2.name }} < {{ var2.end }}; {{ var2.name }}++){\r\n        std::cout << \"Hello\" << std::endl;\r\n    }\r\n    {{ var1.name }} += {{ var1.step }};\r\n}\r\n\r\nanswer:\r\n{{ var1.iterations * var2.iterations }}\r\n\r\nincorrect:\r\n{{ var1.iterations * var2.iterations + 1}}\r\n{{ var1.iterations * var2.iterations - 1}}\r\n{{ var1.iterations * var2.iterations + 2}}",
     "promptText": "How many times will \"Hello\" be printed?"
   },
   {
-    "id": "a75465fb-ce6a-4eda-ae8c-9bc5ceaca9e0",
+    "id": "2",
     "name": "Nested Loop Arithmetic",
     "templateText": "variables:\r\nlv1 = LoopInt(\"count\", 1, 2, 4, 5, 1, 1, False)\r\nlv2 = LoopInt(\"i\", 1, 1, 3, 4, 1, 1, False)\r\nlv3 = LoopInt(\"p\", 1, 1, 2, 3, 1, 1, False)\r\n\r\nquestion:\r\nint {{ lv1.name }}, {{ lv2.name }};\r\n{{ lv1.name }} = {{ lv1.start }};\r\nwhile ({{ lv1.name }} < {{ lv1.end }}){\r\n    {{ lv2.name }} = {{ lv2.start }};\r\n    while({{ lv2.name }} < {{ lv2.end }}){\r\n        cout << {{ lv2.name }} * {{ lv1.name }} << \" \";\r\n        {{ lv2.name }} += {{ lv2.step }};\r\n    }\r\n    {{ lv1.name }} += {{ lv1.step }};\r\n}\r\n\r\nanswer:\r\nloopPrint(\"{{ lv1.current * lv2.current }} \", lv1, lv2)\r\n\r\nincorrect:\r\nloopPrint(\"{{ lv1.current * lv2.current + 1 }} \", lv1, lv2)\r\nloopPrint(\"{{ lv1.current * lv3.current }} \", lv1, lv3)\r\nloopPrint(\"{{ lv2.current * lv3.current }} \", lv2, lv3)\r\n\r\n",
     "promptText": "What is the output of the following code?"
   },
   {
-    "id": "bd3cb5fe-a4b1-4cc6-9b33-99a676dc2cfe",
+    "id": "3",
     "name": "Random Loop Var Function Example",
     "templateText": "variables:\r\nvar1 = UInt(\"myVar1\", 1, 50)\r\nvar2 = UInt(\"myVar2\", 1, 50)\r\nloopVar1 = LoopInt(charGen(), 1, 5, 10, 20, 1, 3)\r\nloopVar2 = LoopInt(charGen(), 1, 3, 4, 5, 1, 1)\r\nloopLine1 = \"std::cout << \\\"Hello friend {{ var1 }}\\\";\"\r\nloopLine2 = \"std::cout << \\\"You have {{ var2 }} messages\\\";\"\r\nrandomLoopVar1 = randomLoop(loopVar1, loopLine1, loopLine2)\r\nrandomLoopVar2 = randomLoop(loopVar2, loopLine2, loopLine1, randomLoopVar1)\r\n\r\n\r\nquestion:\r\n{{ randomLoopVar2 }}\r\n\r\nanswer:\r\nlol\r\n\r\nincorrect:\r\nidk",
     "promptText": "Look at my function"
   },
   {
-    "id": "8c40e3d1-37d5-4686-af1e-ffa7dcc00b35",
+    "id": "4",
     "name": "File Handling Conditional Existence",
     "templateText": "variables:\r\nwhichWay = choose((\"does not exist\", False), (\"exists\", True))\r\n\r\nquestion:\r\nstd::ifstream my_file;\r\nmy_file.open(\"numbers.dat\");\r\nif( !my_file ){\r\n    std::cout << \"Potato\" << std::endl;\r\n} else {\r\n    std::cout << \"Success\" << std::endl;\r\n}\r\n\r\nanswer:\r\n{% if whichWay.value %}\r\nSuccess\r\n{% else %}\r\nPotato\r\n{% endif %}\r\n\r\nincorrect:\r\n{% if whichWay.value %}\r\nPotato\r\n{% else %}\r\nSuccess\r\n{% endif %}\r\nNothing, program crashes first.\r\nNothing, program fails to compile because of the code in the snippet.",
     "promptText": "Suppose the file numbers.dat {{ whichWay.text }}. If the following snippet was in your main function, what would be output?"

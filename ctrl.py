@@ -16,7 +16,7 @@ from pathlib import Path                                                        
 from typing import Any                                                          # Any is used for payload typing flexibility
 from flask import Flask, redirect, render_template, request, session, url_for   # Flask imports provide routing, form access, session state, and redirects
 from parser_engine import TemplateProcessingError, generateQuestion             # Parser imports provide generation and normalized error handling
-from supabase_client import FetchQuestionsTable                                 # Supabase client import provides database access for question records
+from supabase_client import FetchQuestionsTable, SaveQuestion                   # Supabase client import provides database access for question records
 
 # app is the Flask application instance
 app = Flask(__name__)
@@ -239,6 +239,16 @@ def index() -> str:
                     writeSavedQuestions(savedQuestions)
                     selectedQuestionId = questionId
                     questionName = normalizedName
+
+                    # Writes the saved question to Supabase as well
+                    try:
+                        SaveQuestion(
+                            normalizedName,
+                            promptText,
+                            templateText,
+                        )
+                    except Exception as exc:
+                        statusMessage = f"Saved locally, but Supabase save failed: {exc}"
                 else:
                     statusMessage = "Preview generated."
 
