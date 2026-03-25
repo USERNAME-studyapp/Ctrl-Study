@@ -187,7 +187,7 @@ def choose(*options: tuple[Any, Any]) -> ChoiceValue:
 
 # ____________________________________________ VALUE METHODS _________________________________________
 
-# ================ randomLoop: CREATES A DYNAMIC LOOP RENDER GIVEN A LOOP INTEGER AND BODY ================
+# ================ randomLoop: CREATES A DYNAMIC LOOP RENDER GIVEN A LOOP INTEGER AND BODY (C++ ONLY FOR NOW!!!!) ================
 # Use: randLoopVar = randomLoop(loopIntValue, loopBodyString1, loopBodyString2, ...)
 def randomLoop(loopInt: LoopIntValue, *bodyLines: str) -> str:
     # Validates loop variable type for predictable rendering.
@@ -292,7 +292,7 @@ def loopPrint(formatString: str, *loopVars: Any) -> str:
     valueLists = [loopVar.values for loopVar in loopVars]                   # Collects each loop's values list; rightmost loop should increment fastest
     renderedPieces: list[str] = []
 
-    for valueTuple in itertools.product(*valueLists):                       # Iterates in true nested-loop order using the CARTESIAN PRODUCT
+    for valueTuple in itertools.product(*valueLists):                       # Iterates in true nested-loop order using the CARTESIAN PRODUCT LOL
         for index, currentValue in enumerate(valueTuple):                   # Updates current value for each loop variable in this iteration state
             loopVars[index].current = currentValue
 

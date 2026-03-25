@@ -55,7 +55,7 @@
           <label for="chosen_question_id">Saved Questions</label><br />
           <select id="chosen_question_id" name="chosen_question_id" size="20" style="width: 320px; overflow-y: auto;">
             {% for item in saved_questions %}
-            <option value="{{ item.id }}" {% if item.id == selected_question_id %}selected{% endif %}>{{ item.name }}</option>
+            <option value="{{ item.id }}" {% if item.id == selected_question_id %}selected{% endif %}>{{ item.title }}</option>
             {% endfor %}
           </select><br /><br />
 
@@ -68,7 +68,5 @@
     <h2>Preview Output</h2>
     <textarea rows="20" cols="140" readonly>{{ preview_output }}</textarea>
 
-    <h3 style="color: #b30000; margin-top: 16px;">TEST SUPABASE QUESTIONS (DELETE ME)</h3>
-    <pre style="border: 2px dashed #b30000; padding: 12px; background: #fff7f7;">{{ supabase_questions | tojson(indent=2) }}</pre>
   </body>
 </html>

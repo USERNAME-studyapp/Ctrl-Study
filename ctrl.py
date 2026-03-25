@@ -10,13 +10,16 @@
 
 from __future__ import annotations
 
-import json                                                                     # JSON is used to persist saved questions.# JSON is used to persist saved questions
-import uuid                                                                     # UUID is used to assign stable ids to saved question records
-from pathlib import Path                                                        # Path is used for local file operations
 from typing import Any                                                          # Any is used for payload typing flexibility
 from flask import Flask, redirect, render_template, request, session, url_for   # Flask imports provide routing, form access, session state, and redirects
 from parser_engine import TemplateProcessingError, generateQuestion             # Parser imports provide generation and normalized error handling
-from supabase_client import FetchQuestionsTable, SaveQuestion                   # Supabase client import provides database access for question records
+from supabase_client import (                                                   # Supabase client import provides database access for question records
+    FetchAllQuestions,
+    FetchQuestionById,
+    SaveQuestion,
+    UpdateQuestion,
+    DeleteQuestion,
+)
 
 # app is the Flask application instance
 app = Flask(__name__)
@@ -52,10 +55,6 @@ combinations("{{ x }} {{ y }}", out1, out2, out3, out4)
 """
 
 
-# questionsFile is where saved question templates are stored for now
-questionsFile = Path(__file__).resolve().parent / "questions.json"
-
-
 # formatPreview converts generated payload into readable textarea output
 def formatPreview(payload: dict[str, Any]) -> str:
     # Pulls prompt text if present
@@ -77,54 +76,11 @@ def formatPreview(payload: dict[str, Any]) -> str:
     )
 
 
-# loadSavedQuestions reads all saved templates from disk
-def loadSavedQuestions() -> list[dict[str, Any]]:
-    # Returns an empty list when no save file exists yet
-    if not questionsFile.exists():
-        return []
-
-    # Tries to load JSON safely; falls back to empty list on invalid file content
+def parseQuestionId(rawId: str) -> int | None:
     try:
-        try:
-            with questionsFile.open("r", encoding="utf-8") as fileHandle:
-                loaded = json.load(fileHandle)
-        except json.JSONDecodeError:
-            with questionsFile.open("r", encoding="utf-8-sig") as fileHandle:
-                loaded = json.load(fileHandle)
-
-        if not isinstance(loaded, list):
-            return []
-
-        # Normalizes saved records so only template "recipe" fields are kept
-        normalized: list[dict[str, Any]] = []
-        for item in loaded:
-            if not isinstance(item, dict):
-                continue
-            normalized.append(
-                {
-                    "id": str(item.get("id", "")),
-                    "name": str(item.get("name", "Untitled Question")),
-                    "templateText": str(item.get("templateText", defaultTemplate)),
-                    "promptText": str(item.get("promptText", "")),
-                }
-            )
-        return normalized
-    except json.JSONDecodeError:
-        return []
-
-
-# writeSavedQuestions writes the full saved-question list back to disk
-def writeSavedQuestions(savedQuestions: list[dict[str, Any]]) -> None:
-    with questionsFile.open("w", encoding="utf-8") as fileHandle:
-        json.dump(savedQuestions, fileHandle, indent=2)
-
-
-# findQuestionById returns a saved question record by id
-def findQuestionById(savedQuestions: list[dict[str, Any]], questionId: str) -> dict[str, Any] | None:
-    for item in savedQuestions:
-        if item.get("id") == questionId:
-            return item
-    return None
+        return int(rawId)
+    except (TypeError, ValueError):
+        return None
 
 
 # index handles page load and all form actions
@@ -139,13 +95,10 @@ def index() -> str:
     statusMessage = ""
 
     # Loads saved questions for sidebar display and operations
-    savedQuestions = loadSavedQuestions()
-
-    # ==================== TEST-ONLY SUPABASE FETCH ====================
     try:
-        supabaseQuestions = FetchQuestionsTable()
+        savedQuestions = FetchAllQuestions()
     except Exception:
-        supabaseQuestions = [{"error": "Supabase fetch failed (TEST ONLY)"}]
+        savedQuestions = []
 
     # Restores one-time state after redirect to prevent duplicate POST submits on refresh
     restoredState = session.pop("pageState", None)
@@ -169,36 +122,46 @@ def index() -> str:
         chosenQuestionId = request.form.get("chosen_question_id", "").strip()
         hiddenSelectedId = request.form.get("selected_question_id", "").strip()
         selectedQuestionId = chosenQuestionId or hiddenSelectedId
+        selectedQuestionIdValue = parseQuestionId(selectedQuestionId)
 
         # Handles loading a selected saved question into the editor
         if action == "load":
-            selected = findQuestionById(savedQuestions, chosenQuestionId)
-            if selected:
-                selectedQuestionId = str(selected.get("id", ""))
-                questionName = str(selected.get("name", ""))
-                templateText = str(selected.get("templateText", defaultTemplate))
-                promptText = str(selected.get("promptText", ""))
-                previewOutput = ""
-                statusMessage = "Loaded saved question."
-            else:
+            chosenIdValue = parseQuestionId(chosenQuestionId)
+            if chosenIdValue is None:
                 statusMessage = "Select a saved question to load."
+            else:
+                try:
+                    selected = FetchQuestionById(chosenIdValue)
+                    if selected:
+                        selectedQuestionId = str(selected.get("id", ""))
+                        questionName = str(selected.get("title", ""))
+                        # TEMP: DB columns are swapped. TODO: swap back to question_template once fixed.
+                        templateText = str(selected.get("prompt_template", defaultTemplate))
+                        # TEMP: DB columns are swapped. TODO: swap back to prompt_template once fixed.
+                        promptText = str(selected.get("question_template", ""))
+                        previewOutput = ""
+                        statusMessage = "Loaded saved question."
+                    else:
+                        statusMessage = "Select a saved question to load."
+                except Exception as exc:
+                    statusMessage = f"Load failed: {exc}"
 
         # Handles deleting a selected saved question
         elif action == "delete":
-            beforeCount = len(savedQuestions)
-            savedQuestions = [item for item in savedQuestions if item.get("id") != chosenQuestionId]
-            afterCount = len(savedQuestions)
-
-            if afterCount < beforeCount:
-                writeSavedQuestions(savedQuestions)
-                selectedQuestionId = ""
-                questionName = ""
-                templateText = defaultTemplate
-                promptText = ""
-                previewOutput = ""
-                statusMessage = "Deleted saved question."
-            else:
+            chosenIdValue = parseQuestionId(chosenQuestionId)
+            if chosenIdValue is None:
                 statusMessage = "Select a saved question to delete."
+            else:
+                try:
+                    DeleteQuestion(chosenIdValue)
+                    selectedQuestionId = ""
+                    questionName = ""
+                    templateText = defaultTemplate
+                    promptText = ""
+                    previewOutput = ""
+                    statusMessage = "Deleted saved question."
+                except Exception as exc:
+                    statusMessage = f"Delete failed: {exc}"
 
         # Handles resetting the editor to start a new question
         elif action == "new":
@@ -219,36 +182,28 @@ def index() -> str:
                 # Saves either as new or as an update to selected question
                 if action == "save":
                     normalizedName = questionName.strip() or "Untitled Question"
-                    questionId = selectedQuestionId or str(uuid.uuid4())        #creates random 128 bit id apparently
-
-                    record = {
-                        "id": questionId,
-                        "name": normalizedName,
-                        "templateText": templateText,
-                        "promptText": promptText,
-                    }
-
-                    existing = findQuestionById(savedQuestions, questionId)
-                    if existing:
-                        existing.update(record)
-                        statusMessage = "Updated saved question."
-                    else:
-                        savedQuestions.append(record)
-                        statusMessage = "Saved new question."
-
-                    writeSavedQuestions(savedQuestions)
-                    selectedQuestionId = questionId
-                    questionName = normalizedName
-
-                    # Writes the saved question to Supabase as well
                     try:
-                        SaveQuestion(
-                            normalizedName,
-                            promptText,
-                            templateText,
-                        )
+                        if selectedQuestionIdValue is None:
+                            created = SaveQuestion(
+                                normalizedName,
+                                promptText,
+                                templateText,
+                            )
+                            if created:
+                                selectedQuestionId = str(created.get("id", ""))
+                            statusMessage = "Saved new question."
+                        else:
+                            UpdateQuestion(
+                                selectedQuestionIdValue,
+                                normalizedName,
+                                promptText,
+                                templateText,
+                            )
+                            statusMessage = "Updated saved question."
+
+                        questionName = normalizedName
                     except Exception as exc:
-                        statusMessage = f"Saved locally, but Supabase save failed: {exc}"
+                        statusMessage = f"Save failed: {exc}"
                 else:
                     statusMessage = "Preview generated."
 
@@ -282,7 +237,6 @@ def index() -> str:
         status_message=statusMessage,
 
         #TESTING ONLY FOR DATABASE CONNECTION
-        supabase_questions=supabaseQuestions, 
     )
 
 
