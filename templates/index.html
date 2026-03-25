@@ -41,6 +41,29 @@
           <label for="prompt_text">Prompt</label><br />
           <textarea id="prompt_text" name="prompt_text" rows="4" cols="100">{{ prompt_text }}</textarea><br /><br />
 
+          <div style="display: flex; gap: 16px; align-items: flex-start;">
+            <div>
+              <label>Tags</label><br />
+              <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
+                {% for tag in available_tags %}
+                <label style="display: block; margin-bottom: 4px;">
+                  <input type="checkbox" name="tag_ids" value="{{ tag.id }}" {% if tag.id in selected_tag_ids %}checked{% endif %} />
+                  {{ tag.name }}
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div>
+              <label for="question_type">Question Type</label><br />
+              <select id="question_type" name="question_type" style="width: 200px;">
+                <option value="multiple_choice" {% if question_type == "multiple_choice" %}selected{% endif %}>Multiple Choice</option>
+                <option value="multiple_select" {% if question_type == "multiple_select" %}selected{% endif %}>Multiple Select</option>
+                <option value="short_answer" {% if question_type == "short_answer" %}selected{% endif %}>Short Answer</option>
+              </select>
+            </div>
+          </div><br /><br />
+
           <label for="template_text">Template Input</label><br />
           <textarea id="template_text" name="template_text" rows="24" cols="100">{{ template_text }}</textarea><br /><br />
 

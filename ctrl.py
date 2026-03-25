@@ -16,6 +16,8 @@ from parser_engine import TemplateProcessingError, generateQuestion             
 from supabase_client import (                                                   # Supabase client import provides database access for question records
     FetchAllQuestions,
     FetchQuestionById,
+    FetchAllTags,
+    FetchTagIdsForQuestion,
     SaveQuestion,
     UpdateQuestion,
     DeleteQuestion,
@@ -90,6 +92,8 @@ def index() -> str:
     templateText = defaultTemplate
     promptText = ""
     questionName = ""
+    questionType = "multiple_choice"
+    selectedTagIds: list[int] = []
     selectedQuestionId = ""
     previewOutput = ""
     statusMessage = ""
@@ -100,12 +104,22 @@ def index() -> str:
     except Exception:
         savedQuestions = []
 
+    # Loads available tags for the tag dropdown
+    try:
+        availableTags = FetchAllTags()
+    except Exception:
+        availableTags = []
+
     # Restores one-time state after redirect to prevent duplicate POST submits on refresh
     restoredState = session.pop("pageState", None)
     if isinstance(restoredState, dict):
         templateText = str(restoredState.get("templateText", templateText))
         promptText = str(restoredState.get("promptText", promptText))
         questionName = str(restoredState.get("questionName", questionName))
+        questionType = str(restoredState.get("questionType", questionType))
+        restoredTagIds = restoredState.get("selectedTagIds", selectedTagIds)
+        if isinstance(restoredTagIds, list):
+            selectedTagIds = [int(tagId) for tagId in restoredTagIds]
         selectedQuestionId = str(restoredState.get("selectedQuestionId", selectedQuestionId))
         previewOutput = str(restoredState.get("previewOutput", previewOutput))
         statusMessage = str(restoredState.get("statusMessage", statusMessage))
@@ -116,7 +130,10 @@ def index() -> str:
         templateText = request.form.get("template_text", "")
         promptText = request.form.get("prompt_text", "")
         questionName = request.form.get("question_name", "")
+        questionType = request.form.get("question_type", questionType)
         action = request.form.get("action", "preview")
+        rawTagIds = request.form.getlist("tag_ids")
+        selectedTagIds = [int(tagId) for tagId in rawTagIds if tagId.isdigit()]
 
         # Reads selection sources for sidebar and hidden current selection state
         chosenQuestionId = request.form.get("chosen_question_id", "").strip()
@@ -139,6 +156,8 @@ def index() -> str:
                         templateText = str(selected.get("prompt_template", defaultTemplate))
                         # TEMP: DB columns are swapped. TODO: swap back to prompt_template once fixed.
                         promptText = str(selected.get("question_template", ""))
+                        questionType = str(selected.get("question_type", questionType))
+                        selectedTagIds = FetchTagIdsForQuestion(chosenIdValue)
                         previewOutput = ""
                         statusMessage = "Loaded saved question."
                     else:
@@ -158,6 +177,8 @@ def index() -> str:
                     questionName = ""
                     templateText = defaultTemplate
                     promptText = ""
+                    questionType = "multiple_choice"
+                    selectedTagIds = []
                     previewOutput = ""
                     statusMessage = "Deleted saved question."
                 except Exception as exc:
@@ -169,6 +190,8 @@ def index() -> str:
             questionName = ""
             templateText = defaultTemplate
             promptText = ""
+            questionType = "multiple_choice"
+            selectedTagIds = []
             previewOutput = ""
             statusMessage = "Ready for a new question."
 
@@ -188,6 +211,8 @@ def index() -> str:
                                 normalizedName,
                                 promptText,
                                 templateText,
+                                questionType,
+                                selectedTagIds,
                             )
                             if created:
                                 selectedQuestionId = str(created.get("id", ""))
@@ -198,6 +223,8 @@ def index() -> str:
                                 normalizedName,
                                 promptText,
                                 templateText,
+                                questionType,
+                                selectedTagIds,
                             )
                             statusMessage = "Updated saved question."
 
@@ -217,6 +244,8 @@ def index() -> str:
             "templateText": templateText,
             "promptText": promptText,
             "questionName": questionName,
+            "questionType": questionType,
+            "selectedTagIds": selectedTagIds,
             "selectedQuestionId": selectedQuestionId,
             "previewOutput": previewOutput,
             "statusMessage": statusMessage,
@@ -231,12 +260,13 @@ def index() -> str:
         template_text=templateText,
         prompt_text=promptText,
         question_name=questionName,
+        question_type=questionType,
         selected_question_id=selectedQuestionId,
         saved_questions=savedQuestions,
+        selected_tag_ids=selectedTagIds,
+        available_tags=availableTags,
         preview_output=previewOutput,
         status_message=statusMessage,
-
-        #TESTING ONLY FOR DATABASE CONNECTION
     )
 
 

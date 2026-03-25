@@ -38,7 +38,7 @@ def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
     response = (
         ctrlDB.table("questions")
         # TEMP: DB columns are swapped. TODO: swap back to prompt_template, question_template once fixed.
-        .select("id,title,question_template,prompt_template")
+        .select("id,title,question_template,prompt_template,question_type")
         .eq("id", questionId)
         .execute()
     )
@@ -53,7 +53,13 @@ def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
     return None
 
 # ================ SaveQuestion: SAVE QUESTION TO "questions" TABLE IN DATABASE ================
-def SaveQuestion(title: str, promptTemplate: str, answerTemplate: str) -> dict[str, Any] | None:
+def SaveQuestion(
+    title: str,
+    promptTemplate: str,
+    answerTemplate: str,
+    questionType: str,
+    tagIds: list[int],
+) -> dict[str, Any] | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
@@ -63,6 +69,7 @@ def SaveQuestion(title: str, promptTemplate: str, answerTemplate: str) -> dict[s
         "question_template": promptTemplate,
         # TEMP: DB columns are swapped. TODO: write question to question_template once fixed.
         "prompt_template": answerTemplate,
+        "question_type": questionType,
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -74,12 +81,23 @@ def SaveQuestion(title: str, promptTemplate: str, answerTemplate: str) -> dict[s
 
     data = getattr(response, "data", None)
     if isinstance(data, list) and data:
-        return data[0]
+        created = data[0]
+        questionId = created.get("id")
+        if questionId is not None:
+            SetQuestionTags(int(questionId), tagIds)
+        return created
     raise RuntimeError("Supabase insert returned no rows.")
 
 
 # ================ UpdateQuestion: UPDATE QUESTION IN "questions" TABLE ================
-def UpdateQuestion( questionId: int, title: str, promptTemplate: str, answerTemplate: str) -> dict[str, Any] | None:
+def UpdateQuestion(
+    questionId: int,
+    title: str,
+    promptTemplate: str,
+    answerTemplate: str,
+    questionType: str,
+    tagIds: list[int],
+) -> dict[str, Any] | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
@@ -89,6 +107,7 @@ def UpdateQuestion( questionId: int, title: str, promptTemplate: str, answerTemp
         "question_template": promptTemplate,
         # TEMP: DB columns are swapped. TODO: write question to question_template once fixed.
         "prompt_template": answerTemplate,
+        "question_type": questionType,
     }
 
     response = ctrlDB.table("questions").update(payload).eq("id", questionId).execute()
@@ -98,7 +117,9 @@ def UpdateQuestion( questionId: int, title: str, promptTemplate: str, answerTemp
 
     data = getattr(response, "data", None)
     if isinstance(data, list) and data:
-        return data[0]
+        updated = data[0]
+        SetQuestionTags(questionId, tagIds)
+        return updated
     return None
 
 
@@ -111,3 +132,55 @@ def DeleteQuestion(questionId: int) -> None:
     deleteError = getattr(response, "error", None)
     if deleteError:
         raise RuntimeError(f"Supabase delete failed: {deleteError}")
+
+
+# ================ SetQuestionTags: REPLACE TAG MAPPINGS FOR A QUESTION ================
+def SetQuestionTags(questionId: int, tagIds: list[int]) -> None:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    deleteResponse = ctrlDB.table("question_tags").delete().eq("question_id", questionId).execute()
+    deleteError = getattr(deleteResponse, "error", None)
+    if deleteError:
+        raise RuntimeError(f"Supabase delete failed: {deleteError}")
+
+    if not tagIds:
+        return
+
+    payload = [{"question_id": questionId, "tag_id": tagId} for tagId in tagIds]
+    insertResponse = ctrlDB.table("question_tags").insert(payload).execute()
+    insertError = getattr(insertResponse, "error", None)
+    if insertError:
+        raise RuntimeError(f"Supabase insert failed: {insertError}")
+
+# ================ FetchAllTags: FETCH ALL TAGS FROM "tags" TABLE ================
+def FetchAllTags() -> list[dict[str, Any]]:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    response = ctrlDB.table("tags").select("id,name,category").order("id").execute()
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+
+    data = getattr(response, "data", None)
+    if isinstance(data, list):
+        return data
+
+    return []
+
+# ================ FetchTagIdsForQuestion: FETCH TAG IDS FOR A QUESTION ================
+def FetchTagIdsForQuestion(questionId: int) -> list[int]:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    response = ctrlDB.table("question_tags").select("tag_id").eq("question_id", questionId).execute()
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+
+    data = getattr(response, "data", None)
+    if isinstance(data, list):
+        return [int(item.get("tag_id")) for item in data if item.get("tag_id") is not None]
+
+    return []
