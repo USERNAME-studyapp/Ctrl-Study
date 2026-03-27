@@ -64,6 +64,8 @@ def formatPreview(payload: dict[str, Any]) -> str:
     # Pulls incorrect answers and formats them as bullet-like lines
     incorrect = payload.get("incorrect", [])
     incorrectLines = "\n".join(f"- {item}" for item in incorrect) or "(none)"
+    # Pull feedback text if present, or defaults to "Incorrect" to avoid "None" in output (hardcoded because database defaults to Incorrect if NA)
+    feedback = payload.get("feedback", "") or "Incorrect"
 
     # Returns one readable preview block
     return (
@@ -74,7 +76,9 @@ def formatPreview(payload: dict[str, Any]) -> str:
         "ANSWER:\n"
         f"{payload['answer']}\n\n"
         "INCORRECT OPTIONS:\n"
-        f"{incorrectLines}\n"
+        f"{incorrectLines}\n\n"
+        "FEEDBACK:\n"
+        f"{feedback}\n"
     )
 
 
@@ -91,6 +95,7 @@ def index() -> str:
     # Initializes page state defaults
     templateText = defaultTemplate
     promptText = ""
+    feedbackText = ""
     questionName = ""
     questionType = "multiple_choice"
     selectedTagIds: list[int] = []
@@ -115,6 +120,7 @@ def index() -> str:
     if isinstance(restoredState, dict):
         templateText = str(restoredState.get("templateText", templateText))
         promptText = str(restoredState.get("promptText", promptText))
+        feedbackText = str(restoredState.get("feedbackText", feedbackText))
         questionName = str(restoredState.get("questionName", questionName))
         questionType = str(restoredState.get("questionType", questionType))
         restoredTagIds = restoredState.get("selectedTagIds", selectedTagIds)
@@ -129,6 +135,7 @@ def index() -> str:
         # Reads main form fields from request data
         templateText = request.form.get("template_text", "")
         promptText = request.form.get("prompt_text", "")
+        feedbackText = request.form.get("feedback_text", "")
         questionName = request.form.get("question_name", "")
         questionType = request.form.get("question_type", questionType)
         action = request.form.get("action", "preview")
@@ -156,6 +163,7 @@ def index() -> str:
                         templateText = str(selected.get("prompt_template", defaultTemplate))
                         # TEMP: DB columns are swapped. TODO: swap back to prompt_template once fixed.
                         promptText = str(selected.get("question_template", ""))
+                        feedbackText = str(selected.get("feedback_template", ""))
                         questionType = str(selected.get("question_type", questionType))
                         selectedTagIds = FetchTagIdsForQuestion(chosenIdValue)
                         previewOutput = ""
@@ -177,6 +185,7 @@ def index() -> str:
                     questionName = ""
                     templateText = defaultTemplate
                     promptText = ""
+                    feedbackText = ""
                     questionType = "multiple_choice"
                     selectedTagIds = []
                     previewOutput = ""
@@ -190,6 +199,7 @@ def index() -> str:
             questionName = ""
             templateText = defaultTemplate
             promptText = ""
+            feedbackText = ""
             questionType = "multiple_choice"
             selectedTagIds = []
             previewOutput = ""
@@ -199,7 +209,7 @@ def index() -> str:
         else:
             try:
                 # Generates rendered question data from current template text
-                payload = generateQuestion(templateText, promptText)
+                payload = generateQuestion(templateText, promptText, feedbackText)
                 previewOutput = formatPreview(payload)
 
                 # Saves either as new or as an update to selected question
@@ -211,6 +221,7 @@ def index() -> str:
                                 normalizedName,
                                 promptText,
                                 templateText,
+                                feedbackText,
                                 questionType,
                                 selectedTagIds,
                             )
@@ -223,6 +234,7 @@ def index() -> str:
                                 normalizedName,
                                 promptText,
                                 templateText,
+                                feedbackText,
                                 questionType,
                                 selectedTagIds,
                             )
@@ -243,6 +255,7 @@ def index() -> str:
         session["pageState"] = {
             "templateText": templateText,
             "promptText": promptText,
+            "feedbackText": feedbackText,
             "questionName": questionName,
             "questionType": questionType,
             "selectedTagIds": selectedTagIds,
@@ -259,6 +272,7 @@ def index() -> str:
         "index.html",
         template_text=templateText,
         prompt_text=promptText,
+        feedback_text=feedbackText,
         question_name=questionName,
         question_type=questionType,
         selected_question_id=selectedQuestionId,

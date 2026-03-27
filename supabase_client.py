@@ -38,7 +38,7 @@ def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
     response = (
         ctrlDB.table("questions")
         # TEMP: DB columns are swapped. TODO: swap back to prompt_template, question_template once fixed.
-        .select("id,title,question_template,prompt_template,question_type")
+        .select("id,title,question_template,prompt_template,feedback_template,question_type")
         .eq("id", questionId)
         .execute()
     )
@@ -57,6 +57,7 @@ def SaveQuestion(
     title: str,
     promptTemplate: str,
     answerTemplate: str,
+    feedbackTemplate: str,
     questionType: str,
     tagIds: list[int],
 ) -> dict[str, Any] | None:
@@ -69,6 +70,7 @@ def SaveQuestion(
         "question_template": promptTemplate,
         # TEMP: DB columns are swapped. TODO: write question to question_template once fixed.
         "prompt_template": answerTemplate,
+        "feedback_template": feedbackTemplate,
         "question_type": questionType,
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -95,6 +97,7 @@ def UpdateQuestion(
     title: str,
     promptTemplate: str,
     answerTemplate: str,
+    feedbackTemplate: str,
     questionType: str,
     tagIds: list[int],
 ) -> dict[str, Any] | None:
@@ -107,6 +110,7 @@ def UpdateQuestion(
         "question_template": promptTemplate,
         # TEMP: DB columns are swapped. TODO: write question to question_template once fixed.
         "prompt_template": answerTemplate,
+        "feedback_template": feedbackTemplate,
         "question_type": questionType,
     }
 

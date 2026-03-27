@@ -472,7 +472,7 @@ def generateFromLine(statementLine: str, context: dict[str, Any]) -> list[str]:
 # ================ generateQuestion: MAIN HIGH-LEVEL API FOR THE FLASK APP ================
 # e.g. generateQuestion(fullTemplateText) -> {"question": "...", "answer": "...", "incorrect": [...], "variables": {...}}
 # Returns the fully rendered question payload for the app
-def generateQuestion(templateText: str, promptText: str = "") -> dict[str, Any]:
+def generateQuestion(templateText: str, promptText: str = "", feedbackText: str = "") -> dict[str, Any]:
     # Evaluate variables first so later sections can reference them
     sections = parseSections(templateText)
     context = evaluateVariables(sections.variables)
@@ -482,16 +482,7 @@ def generateQuestion(templateText: str, promptText: str = "") -> dict[str, Any]:
     renderedQuestion = renderJinja(sections.question, context).strip()
     renderedAnswer = evaluateAnswer(sections.answer, context)
     renderedIncorrect = evaluateIncorrect(sections.incorrect, context, correctAnswer=renderedAnswer)
-
-    # Convert variables into JSON-serializable form for the API response
-    serializableVariables: dict[str, Any] = {}
-    for key, value in context.items():
-        if isinstance(value, UIntValue):
-            # Preserve UIntValue metadata while ensuring JSON compatibility
-            serializableVariables[key] = {"value": int(value), "name": value.name}
-        else:
-            # Pass through plain values as-is
-            serializableVariables[key] = value
+    renderedFeedback = evaluateAnswer(feedbackText, context)
 
     # Return the final response payload
     return {
@@ -499,5 +490,5 @@ def generateQuestion(templateText: str, promptText: str = "") -> dict[str, Any]:
         "question": renderedQuestion,
         "answer": renderedAnswer,
         "incorrect": renderedIncorrect,
-        "variables": serializableVariables,
+        "feedback": renderedFeedback,
     }
