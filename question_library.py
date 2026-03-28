@@ -15,21 +15,31 @@ import random                                   # Random is used for numeric gen
 import re                                       # Regex is used to read placeholder names from template text
 from typing import Any                          # Any keeps helper signatures flexible for custom future types
 from jinja2 import Environment, StrictUndefined # Jinja is used to render formatting strings safely
+import supabase_client                          # Supabase client is used for random names from the database
 
 
-# UIntValue stores both the value and the variable name seen by users
+# UNumberValue stores both the value and the variable name seen by users
 @dataclass
-class UIntValue:
-    value: int
+class UNumberValue:
+    value: float
     name: str
 
     # Converts the object to its numeric string representation
     def __str__(self) -> str:
         return str(self.value)
 
+    # Converts the object to a float for math/comparison use
+    def __float__(self) -> float:
+        return float(self.value)
+
     # Converts the object to an integer for math/comparison use
     def __int__(self) -> int:
-        return self.value
+        return int(self.value)
+
+# UIntValue stores an integer value and inherits numeric behavior
+@dataclass
+class UIntValue(UNumberValue):
+    value: int
 
 
 # LoopIntValue stores a randomized loop variable definition and its generated iteration values
@@ -67,6 +77,32 @@ class ChoiceValue:
     def __str__(self) -> str:
         return self.text
 
+# Name stores a full name with easy template access to each part
+@dataclass
+class Name:
+    first: str
+    middle: str
+    last: str
+
+    # Converts the object to its display name for template rendering
+    def __str__(self) -> str:
+        if self.middle:
+            return f"{self.first} {self.middle}. {self.last}"
+        return f"{self.first} {self.last}"
+
+# ____________________________________________ DATA TYPE HELPERS _________________________________________
+
+# Canonical C++-style data types and their typical sizes (in bytes) for 64-bit environments.
+_DATA_TYPES: dict[str, int] = {
+    "char": 1,
+    "bool": 1,
+    "short": 2,
+    "int": 4,
+    "long": 8,
+    "float": 4,
+    "double": 8,
+}
+
 # ____________________________________________ VALUE GENERATORS _________________________________________
 
 # ================ UInt: CREATES A RANDOM UNSIGNED INTEGER WITH EXPLICIT NAME AND RANGE ================
@@ -80,6 +116,19 @@ def UInt(name: str = "value", minValue: int = 0, maxValue: int = 100) -> UIntVal
     randomValue = random.randint(minValue, maxValue)
     return UIntValue(value=randomValue, name=name)
 
+
+# ================ UFloat: CREATES A RANDOM UNSIGNED FLOAT WITH EXPLICIT NAME AND RANGE ================
+# Use: UFloat(myVar, 0.0, 10.0, 2)
+def UFloat(name: str = "value", minValue: float = 0.0, maxValue: float = 100.0, precision: int | None = 2) -> UNumberValue:
+    # Validates range rules for unsigned float generation
+    if minValue < 0 or maxValue < 0 or minValue > maxValue:
+        raise ValueError("UFloat range must be non-negative and min <= max.")
+
+    # Generates the value and returns a structured UNumberValue object
+    randomValue = random.uniform(minValue, maxValue)
+    if precision is not None:
+        randomValue = round(randomValue, precision)
+    return UNumberValue(value=randomValue, name=name)
 
 # ================ LoopInt: CREATES A RANDOMIZED LOOP VARIABLE CONFIGURATION ================
 # Use: LoopInt(i, 0, 4, 8, 20, 1, 3, True)
@@ -139,10 +188,22 @@ def LoopInt(
     # Fails clearly when no valid loop could be created from provided constraints
     raise ValueError("LoopInt could not generate a non-empty loop with the provided bounds.")
 
-# ================ nameGen: GENERATES A SIMPLE VARIABLE NAME STRING ================
-# TEMPORARY UNTIL DATABASE SET UP TODO!!!!!!!!!
-def nameGen(prefix: str = "var") -> str:
-    return f"{prefix}{random.randint(100, 999)}"
+# ================ nameGen: GENERATES A RANDOM FULL NAME OBJECT ================
+# Use: nameGen()
+def nameGen() -> Name:
+    record = supabase_client.FetchRandomName()
+    if not record:
+        raise ValueError("nameGen could not fetch a name from the database.")
+
+    first = str(record.get("FirstName", "")).strip()
+    middle = str(record.get("MiddleInitial", "")).strip()
+    last = str(record.get("LastName", "")).strip()
+
+    if not first or not last:
+        raise ValueError("nameGen received an incomplete name record.")
+
+    middleInitial = middle[0].upper() if middle else ""
+    return Name(first=first, middle=middleInitial, last=last)
 
 # ================ charGen: GENERATES A SIMPLE LOWERCASE LETTER ================
 # Use: charGen(var1.name) -> "a" or "b" or ... "z"; for simple variable names or character-based questions
@@ -155,18 +216,40 @@ def charGen(*exclude: str) -> str:
 
 # ================ greaterThan: RETURNS A RANDOM INTEGER THAT IS STRICLY GREATER THAN THE BASE ================
 # Use: greaterThan(myVar) or greaterThan(5)
-def greaterThan(base: Any) -> int:
-    baseValue = int(base.value) if isinstance(base, UIntValue) else int(base)   # Supports either a plain int or a UIntValue object
-    return random.randint(baseValue + 1, baseValue + 10)                        # Returns a simple greater value in a nearby numeric band
+def greaterThan(base: Any) -> Any:
+    if isinstance(base, UNumberValue):                                           # Supports numeric library values (int or float)
+        baseValue = float(base.value)
+        if isinstance(base.value, float) and not base.value.is_integer():
+            return random.uniform(baseValue + 0.1, baseValue + 10.0)
+        return random.randint(int(baseValue) + 1, int(baseValue) + 10)
+
+    baseValue = float(base)
+    if isinstance(base, float) and not base.is_integer():
+        return random.uniform(baseValue + 0.1, baseValue + 10.0)
+    return random.randint(int(baseValue) + 1, int(baseValue) + 10)
 
 
 # ================ lessThan: RETURNS A RANDOM INTEGER THAT IS STRICLY LESS THAN THE BASE ================
 # Use: lessThan(myVar) or lessThan(5)
-def lessThan(base: Any) -> int:
-    baseValue = int(base.value) if isinstance(base, UIntValue) else int(base)   # Supports either a plain int or a UIntValue object
-    if baseValue <= 1:                                                          # Keeps output valid for very small base values
+def lessThan(base: Any) -> Any:
+    if isinstance(base, UNumberValue):                                           # Supports numeric library values (int or float)
+        baseValue = float(base.value)
+        if isinstance(base.value, float) and not base.value.is_integer():
+            if baseValue <= 0.1:
+                return 0.0
+            return random.uniform(0.0, baseValue - 0.1)
+        if baseValue <= 1:
+            return 0
+        return random.randint(0, int(baseValue) - 1)
+
+    baseValue = float(base)
+    if isinstance(base, float) and not base.is_integer():
+        if baseValue <= 0.1:
+            return 0.0
+        return random.uniform(0.0, baseValue - 0.1)
+    if baseValue <= 1:
         return 0
-    return random.randint(0, baseValue - 1)                                     # Returns a value from zero through one less than base
+    return random.randint(0, int(baseValue) - 1)
 
 
 # ================ choose: RETURNS ONE LABELED OPTION FOR TEMPLATE CONDITION LOGIC ================
@@ -184,8 +267,29 @@ def choose(*options: tuple[Any, Any]) -> ChoiceValue:
 
     return random.choice(normalized)                                            # Returns one random option for use in templates
 
+# ================ randomDataType: RETURNS A RANDOM DATA TYPE STRING ================
+# Use: randomDataType()
+def randomDataType() -> str:
+    if not _DATA_TYPES:
+        raise ValueError("randomDataType has no available data types.")
+    return random.choice(list(_DATA_TYPES.keys()))
+
 
 # ____________________________________________ VALUE METHODS _________________________________________
+
+# ================ sizeOfCalc: RETURNS TOTAL SIZE FOR A TYPE AND COUNT ================
+# Use: sizeOfCalc("double", 20)
+def sizeOfCalc(typeName: str, count: int) -> int:
+    if not isinstance(typeName, str) or not typeName.strip():
+        raise ValueError("sizeOfCalc expects a non-empty type name.")
+    if not isinstance(count, int) or count < 0:
+        raise ValueError("sizeOfCalc expects a non-negative integer count.")
+
+    key = typeName.strip().lower()
+    if key not in _DATA_TYPES:
+        raise ValueError(f"sizeOfCalc does not recognize type: {typeName}")
+
+    return _DATA_TYPES[key] * count
 
 # ================ randomLoop: CREATES A DYNAMIC LOOP RENDER GIVEN A LOOP INTEGER AND BODY (C++ ONLY FOR NOW!!!!) ================
 # Use: randLoopVar = randomLoop(loopIntValue, loopBodyString1, loopBodyString2, ...)

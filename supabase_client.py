@@ -1,5 +1,6 @@
 from supabase import create_client, Client
 import os
+import random
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Any
@@ -188,3 +189,24 @@ def FetchTagIdsForQuestion(questionId: int) -> list[int]:
         return [int(item.get("tag_id")) for item in data if item.get("tag_id") is not None]
 
     return []
+
+# ================ FetchRandomName: FETCH ONE RANDOM NAME FROM "randomnames" TABLE ================
+def FetchRandomName() -> dict[str, Any] | None:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    response = (
+        ctrlDB.table("randomnames")
+        .select("FirstName,MiddleInitial,LastName")
+        .execute()
+    )
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+
+    data = getattr(response, "data", None)
+    if isinstance(data, list) and data:
+        return random.choice(data)
+
+    return None
+

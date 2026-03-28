@@ -1,0 +1,113 @@
+Tags:
+int
+ float
+ bool
+ char
+ string-methods
+ type-casting-explicit
+ type-casting-implicit
+ const
+ operator-precedence
+ comparison-operators
+ logical-operators
+ increment-decrement
+ compound-assignment
+ if-statements
+ if-else-chains
+ nested-conditionals
+ switch-statements
+ ternary-operator
+ for-loops
+ while-loops
+ do-while-loops
+ nested-loops
+ break-and-continue
+ infinite-loops
+ function-declaration
+ parameters-and-arguments
+ return-values
+ void-vs-nonvoid
+ function-overloading
+ variable-scope
+ pass-by-value
+ pass-by-reference
+ arrays-1d
+ arrays-2d
+ array-indexing
+ array-iteration
+ parallel-arrays
+ console-input
+ console-output
+ output-formatting
+ file-reading-text
+ file-writing-text
+ file-reading-lines
+ file-error-handling
+ syntax-errors
+ runtime-errors
+ logic-errors
+ off-by-one-errors
+ classes-and-objects
+ constructors
+ encapsulation
+ access-modifiers
+ inheritance
+ method-overriding
+ polymorphism
+ recursion-base-case
+ recursion-call-stack
+ tail-recursion
+ recursion-vs-iteration
+ linear-search
+ binary-search
+ bubble-sort
+ selection-sort
+ insertion-sort
+ merge-sort
+ quick-sort
+ big-o
+ singly-linked-lists
+ doubly-linked-lists
+ linked-list-insert
+ linked-list-delete
+ linked-list-traversal
+ stacks
+ stack-operations
+ queues
+ queue-operations
+ stack-vs-queue
+ binary-trees
+ binary-search-trees
+ inorder-traversal
+ preorder-traversal
+ postorder-traversal
+ hash-tables
+ hash-collisions
+ hashmaps
+ stack-vs-heap
+ pointer-basics
+ null-pointers
+ pointer-arithmetic
+ dangling-pointers
+
+question to transform:
+
+Read the following program:
+#include
+
+void CalculateSum(int sum){
+sum = 0;
+for(int i = 0; i < 5; i++)
+sum += i;
+}int main(){
+int sum = 0;
+CalculateSum(sum);
+std::cout << sum << std::endl;
+}
+
+What is the printed value of sum at the end of execution?
+0
+10
+5
+1
+
