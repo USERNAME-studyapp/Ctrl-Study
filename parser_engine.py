@@ -142,8 +142,28 @@ def parseArgumentValue(valueText: str, context: dict[str, Any]) -> Any:
     if text in context:                                                                                 # Variable reference from the current evaluation context
         return context[text]
 
+    # Support simple dotted attribute access like var.attr or var.attr.subattr
+    dottedMatch = re.match(r"^([A-Za-z_]\w*)(\.[A-Za-z_]\w*)+$", text)
+    if dottedMatch:
+        return resolveDottedValue(text, context)
+
     # Fallback: treat as a bare string token (e.g., identifiers or unknown literals)
     return text
+
+# ================ resolveDottedValue: RESOLVES DOTTED ATTRIBUTE PATHS FROM CONTEXT ================
+def resolveDottedValue(pathText: str, context: dict[str, Any]) -> Any:
+    parts = pathText.split(".")
+    rootName = parts[0]
+    if rootName not in context:
+        raise ValueError(f"{pathText} is undefined.")
+
+    current = context[rootName]
+    for attr in parts[1:]:
+        if not hasattr(current, attr):
+            raise ValueError(f"{pathText} is not a valid attribute path.")
+        current = getattr(current, attr)
+
+    return current
 
 
 # ================ parseFunctionArguments: PARSES POSITIONAL + MINIMAL NAMED ARGUMENTS ================
@@ -452,6 +472,11 @@ def evaluateIncorrect(incorrectBlock: str, context: dict[str, Any], correctAnswe
 def generateFromLine(statementLine: str, context: dict[str, Any]) -> list[str]:
     methodMatch = re.match(r"^([A-Za-z_]\w*)\(\s*(.*)\s*\)\s*;?$", statementLine)
     if not methodMatch:                                                         # Treat non-call lines as plain text with Jinja rendering support
+        dottedMatch = re.match(r"^([A-Za-z_]\w*)(\.[A-Za-z_]\w*)+\s*$", statementLine)
+        if dottedMatch:
+            resolved = resolveDottedValue(statementLine.strip(), context)
+            candidate = str(resolved).strip()
+            return [candidate] if candidate else []
         candidate = renderJinja(statementLine, context).strip()
         return [candidate] if candidate else []
 

@@ -92,22 +92,11 @@ int
 
 question to transform:
 
-Read the following program:
-#include
+Which of the following would correctly access the first element of an array called grades?
+grades.at(1)
+grades[1]
+grades[0]
+grades[-1]
 
-void CalculateSum(int sum){
-sum = 0;
-for(int i = 0; i < 5; i++)
-sum += i;
-}int main(){
-int sum = 0;
-CalculateSum(sum);
-std::cout << sum << std::endl;
-}
 
-What is the printed value of sum at the end of execution?
-0
-10
-5
-1
 

@@ -268,11 +268,18 @@ def choose(*options: tuple[Any, Any]) -> ChoiceValue:
     return random.choice(normalized)                                            # Returns one random option for use in templates
 
 # ================ randomDataType: RETURNS A RANDOM DATA TYPE STRING ================
-# Use: randomDataType()
-def randomDataType() -> str:
+# Use: randomDataType() or randomDataType("double", "float")
+def randomDataType(*exclude: str) -> str:
     if not _DATA_TYPES:
         raise ValueError("randomDataType has no available data types.")
-    return random.choice(list(_DATA_TYPES.keys()))
+
+    excluded = {str(value).strip().lower() for value in exclude if str(value).strip()}
+    pool = [key for key in _DATA_TYPES.keys() if key.lower() not in excluded]
+
+    if not pool:
+        raise ValueError("randomDataType exclusion list removes all data types.")
+
+    return random.choice(pool)
 
 
 # ____________________________________________ VALUE METHODS _________________________________________

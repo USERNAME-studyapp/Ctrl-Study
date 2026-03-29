@@ -34,8 +34,9 @@ question_library.py VERSION 2.0 POWER UP (3/27)
     UFloat(name, minValue, maxValue, precision)
         - Generates a float randomly between min and maxValue (inclusive-ish).
         - precision defaults to 2 (set to None to disable rounding).
-    randomDataType()
+    randomDataType(*exclude)
         - Returns a random data type key string from _DATA_TYPES.
+        - Pass type names to exclude (case-insensitive).
     sizeOfCalc(typeName, count)
         - Returns total size in bytes for typeName multiplied by count.
     nameGen()
