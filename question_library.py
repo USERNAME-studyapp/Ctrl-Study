@@ -284,6 +284,14 @@ def randomDataType(*exclude: str) -> str:
 
 # ____________________________________________ VALUE METHODS _________________________________________
 
+# ================ lines: JOINS MULTIPLE STRINGS WITH NEWLINES ================
+# Use: lines("line one", "line two") -> "line one\nline two"
+def lines(*parts: Any) -> str:
+    if not parts:                                                       # validates at least one part is provided
+        raise ValueError("lines expects at least one string.")
+
+    return "\n".join(str(part) for part in parts)                       # joins parts with newline characters
+
 # ================ sizeOfCalc: RETURNS TOTAL SIZE FOR A TYPE AND COUNT ================
 # Use: sizeOfCalc("double", 20)
 def sizeOfCalc(typeName: str, count: int) -> int:

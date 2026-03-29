@@ -303,7 +303,9 @@ def parseSections(templateText: str) -> TemplateSections:
         sectionLines[currentSection].append(rawLine)
 
     for sectionName in sectionHeaders:
-        # Ensure every required section has at least some non-whitespace content
+        # Ensure required sections have at least some non-whitespace content (question is optional)
+        if sectionName == "question":
+            continue
         if not "".join(sectionLines[sectionName]).strip():
             raise TemplateProcessingError(f"ERROR at: missing {sectionName} section content")
 

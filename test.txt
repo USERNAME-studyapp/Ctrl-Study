@@ -92,11 +92,19 @@ int
 
 question to transform:
 
-Which of the following would correctly access the first element of an array called grades?
-grades.at(1)
-grades[1]
-grades[0]
-grades[-1]
+Read the following code snippet (assume that my_file has been created and opened correctly such that it can be written to)
+
+my_file << "John" << " " << "D" << " " << "Doe";
+std::cout << std::endl;
+my_file << "Sally << " " << "S" << " " << "Sandy";
+std::cout << std::endl;
+
+What would be written to the file?
+John D Doe
+John D DoeSally S Sandy
+John D Doe
+Sally S Sandy
+Sally S Sandy
 
 
 

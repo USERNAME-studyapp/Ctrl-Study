@@ -1,4 +1,7 @@
 question_library.py VERSION 1.0
+    =============== NOTES ===============
+    - There can be more than 4 options for a questions, just add more lines in the incorrect section
+    =============== END NOTES ===============
     UInt(name, minValue, maxValue)
         - Generates a number randomly between min and maxValue (inclusive).
         - Given no arguments, defaults to name="value", minValue=0, and maxValue=100
@@ -7,12 +10,12 @@ question_library.py VERSION 1.0
         - Creates a LoopIntValue with fields: name, start, end, step, operator, values, current.
         - iterations equals the length of values (values are generated with range(start, end, step)).
         - allowDecrement=True permits negative step values.
-    charGen(*exclude)
-        - Returns a random lowercase letter a-z.
-        - Excludes any single-character strings provided in exclude.
-    greaterThan(base)
-        - Returns a random integer strictly greater than base.
-        - base can be an int or a UIntValue.
+charGen(*exclude)
+    - Returns a random lowercase letter a-z.
+    - Excludes any single-character strings provided in exclude.
+greaterThan(base)
+    - Returns a random integer strictly greater than base.
+    - base can be an int or a UIntValue.
     lessThan(base)
         - Returns a random integer strictly less than base.
         - base can be an int or a UIntValue.
@@ -31,6 +34,9 @@ question_library.py VERSION 1.0
         - Exposes loop variables by their loop name and by template varId if present.
 
 question_library.py VERSION 2.0 POWER UP (3/27)
+    =============== NOTES ===============
+    - There can be question templates that have an empty field under the "question" part
+    =============== END NOTES ===============
     UFloat(name, minValue, maxValue, precision)
         - Generates a float randomly between min and maxValue (inclusive-ish).
         - precision defaults to 2 (set to None to disable rounding).
@@ -42,3 +48,6 @@ question_library.py VERSION 2.0 POWER UP (3/27)
     nameGen()
         - Returns a Name object from the "randomnames" table.
         - Access fields with .first, .middle, .last and render with {{ name }}.
+    lines(*parts)
+        - Joins the given values with newline characters.
+        - Useful for multi-line outputs in answer/incorrect templates.
