@@ -329,9 +329,9 @@ def randomLoop(loopInt: LoopIntValue, *bodyLines: str) -> str:
 
     # Builds the loop body with consistent indentation.
     if not flattenedBody:
-        renderedBody = "    "
+        renderedBody = "\t"
     else:
-        renderedBody = "\n".join(f"    {line}" for line in flattenedBody)
+        renderedBody = "\n".join(f"\t{line}" for line in flattenedBody)
 
     # Randomly chooses between for-loop and while-loop structures.
     loopStyle = random.choice(["for", "while"])
@@ -342,16 +342,16 @@ def randomLoop(loopInt: LoopIntValue, *bodyLines: str) -> str:
             f"for (int {loopInt.name} = {loopInt.start}; "
             f"{loopInt.name} {comparisonOperator} {loopInt.end}; "
             f"{loopInt.name} {stepOperator} {stepMagnitude}) {{\n"
-            f"{renderedBody}\n"
-            "}"
-        )
+        f"{renderedBody}\n"
+        "}"
+    )
 
     # Renders a C++ while-loop with explicit initialization and step.
     return (
         f"int {loopInt.name} = {loopInt.start};\n"
         f"while ({loopInt.name} {comparisonOperator} {loopInt.end}) {{\n"
         f"{renderedBody}\n"
-        f"    {loopInt.name} {stepOperator} {stepMagnitude};\n"
+        f"\t{loopInt.name} {stepOperator} {stepMagnitude};\n"
         "}"
     )
 

@@ -92,19 +92,18 @@ int
 
 question to transform:
 
-Read the following code snippet (assume that my_file has been created and opened correctly such that it can be written to)
+Given the following array definition:
 
-my_file << "John" << " " << "D" << " " << "Doe";
-std::cout << std::endl;
-my_file << "Sally << " " << "S" << " " << "Sandy";
-std::cout << std::endl;
+short counts[5] {11, 22, 33, 44};
 
-What would be written to the file?
-John D Doe
-John D DoeSally S Sandy
-John D Doe
-Sally S Sandy
-Sally S Sandy
+What will the following statement display?
+std::cout << counts[4] << std::endl;
+
+0
+Unknown, the 4th element isn't initialized so it could be anything.
+Nothing, the program would fail to compile because of the array's declaration.
+
+
 
 
 

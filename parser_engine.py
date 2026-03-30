@@ -279,6 +279,31 @@ def normalizeLineExpression(expression: str) -> str:
     return f'line("""{safe}""")'
 
 
+# ================ indentAfterNewline: INDENTS MULTI-LINE INSERTS TO MATCH THEIR LINE ================
+# returns a string where every newline is followed by the given indent
+# e.g. indentAfterNewline("a\nb", "    ") -> "a\n    b"
+def indentAfterNewline(value: Any, indent: str) -> str:
+    text = str(value)
+    if not text or not indent:
+        return text
+    return text.replace("\n", "\n" + indent)
+
+# ================ applyInlineIndentFilter: WRAPS INLINE JINJA BLOCKS WITH INDENT FILTER ================
+# Injects an indent filter into {{ ... }} expressions that start a line with whitespace.
+# This makes multi-line inserts keep the same tab/space prefix as the placeholder line.
+def applyInlineIndentFilter(templateText: str) -> str:
+    def replacer(match: re.Match[str]) -> str:
+        indent = match.group(1)
+        expression = match.group(2).strip()
+        if "indent_after_newline" in expression:
+            return match.group(0)
+
+        safeIndent = indent.replace("\\", "\\\\").replace("'", "\\'")
+        return f"{indent}{{{{ {expression} | indent_after_newline('{safeIndent}') }}}}"
+
+    return re.sub(r"(?m)^([ \t]*){{\s*(.+?)\s*}}", replacer, templateText)
+
+
 # ____________________________________________ TEMPLATE PARSING SECTION _________________________________________
 
 # ================ parseSections: SEPARATES PLAIN TEXT TEMPLATE INTO NAMED SECTION STRINGS ================
@@ -370,8 +395,10 @@ def evaluateVariables(variablesBlock: str) -> dict[str, Any]:
 def renderJinja(templateText: str, context: dict[str, Any]) -> str:
     env = Environment(undefined=StrictUndefined)                                    # use StrictUndefined environment
     env.globals.update(getLibraryFunctionRegistry())                                # Expose library functions so templates can call them directly if needed
+    env.filters["indent_after_newline"] = indentAfterNewline                         # Indent multi-line inserts to match placeholder line
 
     try:                                                                            # If the raw block is a single function call, execute it directly to preserve inner Jinja
+        templateText = applyInlineIndentFilter(templateText)
         strippedText = templateText.strip()
         directCallMatch = re.match(r"^([A-Za-z_]\w*)\((.*)\)$", strippedText)
         if directCallMatch:
