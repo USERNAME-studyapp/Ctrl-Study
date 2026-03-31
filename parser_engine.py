@@ -299,7 +299,7 @@ def applyInlineIndentFilter(templateText: str) -> str:
             return match.group(0)
 
         safeIndent = indent.replace("\\", "\\\\").replace("'", "\\'")
-        return f"{indent}{{{{ {expression} | indent_after_newline('{safeIndent}') }}}}"
+        return f"{indent}{{{{ ({expression}) | indent_after_newline('{safeIndent}') }}}}"
 
     return re.sub(r"(?m)^([ \t]*){{\s*(.+?)\s*}}", replacer, templateText)
 
@@ -403,28 +403,30 @@ def renderJinja(templateText: str, context: dict[str, Any]) -> str:
         directCallMatch = re.match(r"^([A-Za-z_]\w*)\((.*)\)$", strippedText)
         if directCallMatch:
             functionRegistry = getLibraryFunctionRegistry()
-            return str(
-                callLibraryFunctionByName(
-                    directCallMatch.group(1),
-                    directCallMatch.group(2),
-                    context,
-                    functionRegistry,
+            if directCallMatch.group(1) in functionRegistry:
+                return str(
+                    callLibraryFunctionByName(
+                        directCallMatch.group(1),
+                        directCallMatch.group(2),
+                        context,
+                        functionRegistry,
+                    )
                 )
-            )
 
         rendered = env.from_string(templateText).render(context).strip()            # Render the template with the provided context
 
         functionCallMatch = re.match(r"^([A-Za-z_]\w*)\((.*)\)$", rendered)
         if functionCallMatch:                                                       # If the rendered output is a single function call, execute it
             functionRegistry = getLibraryFunctionRegistry()
-            return str(
-                callLibraryFunctionByName(
-                    functionCallMatch.group(1),
-                    functionCallMatch.group(2),
-                    context,
-                    functionRegistry,
+            if functionCallMatch.group(1) in functionRegistry:
+                return str(
+                    callLibraryFunctionByName(
+                        functionCallMatch.group(1),
+                        functionCallMatch.group(2),
+                        context,
+                        functionRegistry,
+                    )
                 )
-            )
 
         return rendered                                                             # Otherwise return the rendered string as-is
     except TemplateSyntaxError as exc:                                              # Map Jinja syntax errors back to the closest template line
@@ -446,13 +448,69 @@ def renderJinja(templateText: str, context: dict[str, Any]) -> str:
         raise errorAt(badLine) from exc                                             # Raise a normalized error with context for user-facing templates
 
 
+# ================ deferLibraryCallsInJinja: DEFERS ENGINE CALLS INSIDE {{ }} OR RAW LINES ================
+# Replace {{ func(...) }} with a literal token so Jinja doesn't execute engine calls.
+# Genuinely had me going insane, I needed so much help from chat
+def deferLibraryCallsInJinja(templateText: str, functionRegistry: dict[str, Any]) -> tuple[str, dict[str, str]]:
+    def replaceMatch(match: re.Match) -> str:
+        funcName = match.group(1)
+        args = match.group(2)
+        if funcName in functionRegistry:
+            return f"__ENGINE_CALL__{funcName}({args})__"
+        return match.group(0)
+
+    deferred = re.sub(r"{{\s*([A-Za-z_]\w*)\((.*?)\)\s*}}", replaceMatch, templateText)
+
+    # Replace full-line engine calls so Jinja won't parse inner {{ }} placeholders.
+    lineMap: dict[str, str] = {}
+    processedLines: list[str] = []
+    tokenIndex = 0
+    for rawLine in deferred.splitlines():
+        stripped = rawLine.strip()
+        lineMatch = re.match(r"^([A-Za-z_]\w*)\(\s*(.*)\s*\)\s*;?$", stripped)
+        if lineMatch and lineMatch.group(1) in functionRegistry:
+            token = f"__ENGINE_LINE_{tokenIndex}__"
+            tokenIndex += 1
+            lineMap[token] = rawLine
+            # Preserve indentation
+            indent = rawLine[: len(rawLine) - len(rawLine.lstrip())]
+            processedLines.append(f"{indent}{token}")
+        else:
+            processedLines.append(rawLine)
+
+    return "\n".join(processedLines), lineMap
+
+
+# ================ restoreLibraryCallsInJinja: RESTORES DEFERRED ENGINE CALLS ================
+# For lines that were fully deferred, replace the token with the original line; for inline calls, convert the token back to the function call format.
+def restoreLibraryCallsInJinja(renderedText: str, lineMap: dict[str, str]) -> str:
+    restored = re.sub(r"__ENGINE_CALL__([A-Za-z_]\w*\(.*?\))__", r"\1", renderedText)
+    for token, originalLine in lineMap.items():
+        restored = restored.replace(token, originalLine)
+    return restored
+
+
 # ================ evaluateAnswer: EVALUATES EACH ANSWER LINE AS ONE METHOD CALL OR TEXT ================
 # e.g. evaluateAnswer("answerLine1\nfuncCall(x)", ctx) -> "answerLine1\n<func result>"
 # Returns a single answer string built from each non-empty answer line
 def evaluateAnswer(answerBlock: str, context: dict[str, Any]) -> str:
-    # Render full blocks when Jinja control structures are present.
+    # Render full blocks when Jinja control structures are present, then process line-by-line.
     if "{%" in answerBlock and "%}" in answerBlock:
-        return renderJinja(answerBlock, context).strip()
+        functionRegistry = getLibraryFunctionRegistry()
+        deferredBlock, lineMap = deferLibraryCallsInJinja(answerBlock, functionRegistry)
+        renderedBlock = renderJinja(deferredBlock, context)
+        renderedBlock = restoreLibraryCallsInJinja(renderedBlock, lineMap)
+        statementLines = [line.strip() for line in renderedBlock.splitlines() if line.strip()]
+        if not statementLines:
+            return ""
+
+        answerLines: list[str] = []
+        for statementLine in statementLines:
+            candidates = generateFromLine(statementLine, context)
+            if candidates:
+                answerLines.append(candidates[0])
+
+        return "\n".join(answerLines).strip()
 
     statementLines = [line.strip() for line in answerBlock.splitlines() if line.strip()]
     if not statementLines:                                              # No answer content provided
@@ -471,7 +529,10 @@ def evaluateAnswer(answerBlock: str, context: dict[str, Any]) -> str:
 # Returns a list of incorrect options, skipping duplicates and the correct answer
 def evaluateIncorrect(incorrectBlock: str, context: dict[str, Any], correctAnswer: str) -> list[str]:
     if "{%" in incorrectBlock and "%}" in incorrectBlock:                                       # If Jinja control blocks are present, render the whole block then split lines
-        incorrectBlock = renderJinja(incorrectBlock, context)
+        functionRegistry = getLibraryFunctionRegistry()
+        deferredBlock, lineMap = deferLibraryCallsInJinja(incorrectBlock, functionRegistry)
+        incorrectBlock = renderJinja(deferredBlock, context)
+        incorrectBlock = restoreLibraryCallsInJinja(incorrectBlock, lineMap)
 
     statementLines = [line.strip() for line in incorrectBlock.splitlines() if line.strip()]
     if not statementLines:                                                                      # No incorrect content provided lol
@@ -512,8 +573,12 @@ def generateFromLine(statementLine: str, context: dict[str, Any]) -> list[str]:
     methodName = methodMatch.group(1)
     argumentBody = methodMatch.group(2)
 
-    # Execute the library function referenced by this line
+    # Execute the library function referenced by this line (fallback to rendering if not found)
     functionRegistry = getLibraryFunctionRegistry()
+    if methodName not in functionRegistry:
+        candidate = renderJinja(statementLine, context).strip()
+        return [candidate] if candidate else []
+
     result = callLibraryFunctionByName(methodName, argumentBody, context, functionRegistry)
 
     if isinstance(result, list):                                                # Normalize list results to a list of non-empty strings

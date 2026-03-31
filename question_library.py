@@ -306,6 +306,49 @@ def sizeOfCalc(typeName: str, count: int) -> int:
 
     return _DATA_TYPES[key] * count
 
+# ================ repeat: REPEATS A VALUE A FIXED NUMBER OF TIMES ================
+# Use: repeat("0", 4) -> "0 0 0 0"
+def repeat(value: Any, count: int) -> str:
+    if not isinstance(count, int) or count < 0:
+        raise ValueError("repeat expects a non-negative integer count.")
+
+    if count == 0:
+        return ""
+
+    token = str(value)
+    return " ".join([token] * count)
+
+# ================ randIntArray: GENERATES A RANDOM INT LIST ================
+# Use: randIntArray(4, 8, 1, 20, True)
+def randIntArray(sizeMin: int, sizeMax: int, valueMin: int, valueMax: int, unique: bool = False) -> list[int]:
+    if sizeMin < 0 or sizeMax < 0 or sizeMin > sizeMax:
+        raise ValueError("randIntArray size bounds must be non-negative and sizeMin <= sizeMax.")
+    if valueMin > valueMax:
+        raise ValueError("randIntArray value bounds must have valueMin <= valueMax.")
+
+    size = random.randint(sizeMin, sizeMax)
+
+    if unique:
+        poolSize = valueMax - valueMin + 1
+        if size > poolSize:
+            raise ValueError("randIntArray unique range is smaller than requested size.")
+        return random.sample(range(valueMin, valueMax + 1), size)
+
+    return [random.randint(valueMin, valueMax) for _ in range(size)]
+
+# ================ arrayDec: BUILDS A C++ ARRAY DECLARATION STRING ================
+# Use: arrayDec("int", "values", [2, 6, 10, 14])
+def arrayDec(typeName: str, name: str, values: list[Any]) -> str:
+    if not isinstance(typeName, str) or not typeName.strip():
+        raise ValueError("arrayDec expects a non-empty type name.")
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("arrayDec expects a non-empty variable name.")
+    if not isinstance(values, list):
+        raise ValueError("arrayDec expects a list of values.")
+
+    joined = ", ".join(str(value) for value in values)
+    return f"{typeName} {name}[{len(values)}] {{{joined}}};"
+
 # ================ randomLoop: CREATES A DYNAMIC LOOP RENDER GIVEN A LOOP INTEGER AND BODY (C++ ONLY FOR NOW!!!!) ================
 # Use: randLoopVar = randomLoop(loopIntValue, loopBodyString1, loopBodyString2, ...)
 def randomLoop(loopInt: LoopIntValue, *bodyLines: str) -> str:
@@ -391,6 +434,7 @@ def combinations(formatString: str, *values: Any, exclude: str | None = None) ->
     results = list(rendered)
     random.shuffle(results)
     return results
+
 
 # ================ loopPrint: RENDERS A FORMAT STRING USING NESTED LOOP VARIABLE ITERATION ORDER ================
 # Use: loopPrint(formatJinjaString, loopInt1, loopInt2, ...)

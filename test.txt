@@ -92,18 +92,12 @@ int
 
 question to transform:
 
-Given the following array definition:
+The following statement would result in [2, 3, 4, 5] being placed in an array of size 4 because the compiler can determine how large it should be based on the initialization syntax.
 
-short counts[5] {11, 22, 33, 44};
+int myarray[] {2, 3, 4, 5};
 
-What will the following statement display?
-std::cout << counts[4] << std::endl;
-
-0
-Unknown, the 4th element isn't initialized so it could be anything.
-Nothing, the program would fail to compile because of the array's declaration.
-
-
+True
+False
 
 
 
