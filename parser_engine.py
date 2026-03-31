@@ -376,7 +376,7 @@ def evaluateVariables(variablesBlock: str) -> dict[str, Any]:
         except Exception:                                                           # Surface evaluation errors at the original line for user-friendly reporting
             raise errorAt(rawLine)
 
-        # Stamp the template variable name for loopPrint name-based access (best-effort)
+        # Stamp the template variable name for loopPrint name-based access (best-effort).
         if hasattr(value, "__dict__"):
             try:
                 setattr(value, "varId", varName)
