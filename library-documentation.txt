@@ -35,8 +35,12 @@ question_library.py VERSION 1.0
 
 question_library.py VERSION 2.0 POWER UP (3/27)
     =============== NOTES ===============
-    - There can be question templates that have an empty field under the "question" part (mostly for those definition questions)
-    - In a jinja conditional {% if %}, you can just write a function from the library like normal.
+    - After a jinja conditional {% if %}, you can just write a function from the library like normal.
+    - IF a question only has one prompt (as in no need for a prompt and something in question), put the prompt in the prompt section.
+    - The "answer" section in the template can now have more than just one answer; this is for multiple_select. evaluateAnswers now returns
+      a list of answers, even if there's only one entry for answer. TLDR: generateQuestion() RETURNS "answer" AS  A LIST OF STRING.
+    - generateQuestion is now much more lenient. We only need something in the prompt field. ALL SECTIONS IN TEMPLATE_TEXT ARE OPTIONAL.
+      This is for short_answer functionality. Of course, you can add the variables section or the question section if you want.
     =============== END NOTES ===============
     UFloat(name, minValue, maxValue, precision)
         - Generates a float randomly between min and maxValue (inclusive-ish).

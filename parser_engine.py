@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass      #Dataclass keeps section payloads explicit and readable
+from functools import wraps            #Wraps preserves function metadata for signature checks
 import inspect                         #Inspect discovers callable library functions dynamically
 import re                              #Regex performs DSL and template pattern matching
 import random                          #Random selects one option per incorrect-line generator call
@@ -41,12 +42,35 @@ sectionHeaders = {"variables", "question", "answer", "incorrect"}
 
 # ================ getLibraryFunctionRegistry: DISCOVERS CALLABLE FUNCTIONS FROM LIBRARY =============
 # returns a dictionary of function names and their associated functions. e.g. registry["loopPrint"]("{{ var1 }} {{ var2 }}", var1, var2)
-def getLibraryFunctionRegistry() -> dict[str, Any]:
+def bindRngToFunction(function: Any, rng: random.Random) -> Any:
+    signature = inspect.signature(function)
+    acceptsRng = "rng" in signature.parameters
+    acceptsKwargs = any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values()
+    )
+
+    if not acceptsRng and not acceptsKwargs:
+        return function
+
+    @wraps(function)
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        if "rng" not in kwargs:
+            kwargs["rng"] = rng
+        return function(*args, **kwargs)
+
+    wrapped.__signature__ = signature
+    return wrapped
+
+
+def getLibraryFunctionRegistry(rng: random.Random | None = None) -> dict[str, Any]:
     registry: dict[str, Any] = {}
     for name, member in inspect.getmembers(question_library, inspect.isfunction):
         if name.startswith("_"):                # don't add functions that start with _ to the registry, in case we want any private functions
             continue
-        registry[name] = member
+        if rng is None:
+            registry[name] = member
+        else:
+            registry[name] = bindRngToFunction(member, rng)
     return registry
 
 
@@ -327,12 +351,7 @@ def parseSections(templateText: str) -> TemplateSections:
         # Append the raw line to the current section's content
         sectionLines[currentSection].append(rawLine)
 
-    for sectionName in sectionHeaders:
-        # Ensure required sections have at least some non-whitespace content (question is optional)
-        if sectionName == "question":
-            continue
-        if not "".join(sectionLines[sectionName]).strip():
-            raise TemplateProcessingError(f"ERROR at: missing {sectionName} section content")
+    # Missing sections are treated as empty (no error) to support prompt-only questions.
 
     # Join the collected lines for each section into the final TemplateSections payload
     return TemplateSections(
@@ -346,9 +365,9 @@ def parseSections(templateText: str) -> TemplateSections:
 # ================ evaluateVariables: EVALUATES VARIABLE ASSIGNMENT EXPRESSIONS ================
 # Returns a context dict mapping variable names to evaluated values, supports nested library calls and references to previously defined variables
 # e.g. evaluateVariables('x = UInt(nameGen(), 1, 50)')
-def evaluateVariables(variablesBlock: str) -> dict[str, Any]:
+def evaluateVariables(variablesBlock: str, rng: random.Random | None = None) -> dict[str, Any]:
     context: dict[str, Any] = {}
-    functionRegistry = getLibraryFunctionRegistry()                                 # Build the function registry once for lookups and eval scope
+    functionRegistry = getLibraryFunctionRegistry(rng)                              # Build the function registry once for lookups and eval scope
 
     for rawLine in variablesBlock.splitlines():                                     # Normalize line content and skip blanks for forgiving template formatting
         line = rawLine.strip()
@@ -369,9 +388,6 @@ def evaluateVariables(variablesBlock: str) -> dict[str, Any]:
             evalScope.update(functionRegistry)
             evalScope.update(context)
             evalScope.update({"True": True, "False": False, "None": None})
-            # Bind line() to the current context so Jinja placeholders resolve in variable assignments.
-            evalScope["line"] = lambda formatString, _ctx=context: question_library.line(formatString, _ctx)
-
             value = eval(expression, {"__builtins__": {}}, evalScope)               # Evaluate the expression as Python code (nested calls allowed)
         except Exception:                                                           # Surface evaluation errors at the original line for user-friendly reporting
             raise errorAt(rawLine)
@@ -392,9 +408,9 @@ def evaluateVariables(variablesBlock: str) -> dict[str, Any]:
 # e.g. renderJinja("Hello {{ name }}", {"name": "Ada"}) -> "Hello Ada"
 # Returns rendered template text, executing a full-line library call if present; used by question/answer/incorrect parsing for consistent Jinja rendering
 # Create a Jinja environment that fails fast on missing variables
-def renderJinja(templateText: str, context: dict[str, Any]) -> str:
+def renderJinja(templateText: str, context: dict[str, Any], rng: random.Random | None = None) -> str:
     env = Environment(undefined=StrictUndefined)                                    # use StrictUndefined environment
-    env.globals.update(getLibraryFunctionRegistry())                                # Expose library functions so templates can call them directly if needed
+    env.globals.update(getLibraryFunctionRegistry(rng))                             # Expose library functions so templates can call them directly if needed
     env.filters["indent_after_newline"] = indentAfterNewline                         # Indent multi-line inserts to match placeholder line
 
     try:                                                                            # If the raw block is a single function call, execute it directly to preserve inner Jinja
@@ -402,7 +418,7 @@ def renderJinja(templateText: str, context: dict[str, Any]) -> str:
         strippedText = templateText.strip()
         directCallMatch = re.match(r"^([A-Za-z_]\w*)\((.*)\)$", strippedText)
         if directCallMatch:
-            functionRegistry = getLibraryFunctionRegistry()
+            functionRegistry = getLibraryFunctionRegistry(rng)
             if directCallMatch.group(1) in functionRegistry:
                 return str(
                     callLibraryFunctionByName(
@@ -417,7 +433,7 @@ def renderJinja(templateText: str, context: dict[str, Any]) -> str:
 
         functionCallMatch = re.match(r"^([A-Za-z_]\w*)\((.*)\)$", rendered)
         if functionCallMatch:                                                       # If the rendered output is a single function call, execute it
-            functionRegistry = getLibraryFunctionRegistry()
+            functionRegistry = getLibraryFunctionRegistry(rng)
             if functionCallMatch.group(1) in functionRegistry:
                 return str(
                     callLibraryFunctionByName(
@@ -491,47 +507,52 @@ def restoreLibraryCallsInJinja(renderedText: str, lineMap: dict[str, str]) -> st
 
 
 # ================ evaluateAnswer: EVALUATES EACH ANSWER LINE AS ONE METHOD CALL OR TEXT ================
-# e.g. evaluateAnswer("answerLine1\nfuncCall(x)", ctx) -> "answerLine1\n<func result>"
-# Returns a single answer string built from each non-empty answer line
-def evaluateAnswer(answerBlock: str, context: dict[str, Any]) -> str:
+# e.g. evaluateAnswer("answerLine1\nfuncCall(x)", ctx) -> ["answerLine1", "<func result>"]
+# Returns a list of answer strings (even if there is only one)
+def evaluateAnswer(answerBlock: str, context: dict[str, Any], rng: random.Random | None = None) -> list[str]:
     # Render full blocks when Jinja control structures are present, then process line-by-line.
     if "{%" in answerBlock and "%}" in answerBlock:
-        functionRegistry = getLibraryFunctionRegistry()
+        functionRegistry = getLibraryFunctionRegistry(rng)
         deferredBlock, lineMap = deferLibraryCallsInJinja(answerBlock, functionRegistry)
-        renderedBlock = renderJinja(deferredBlock, context)
+        renderedBlock = renderJinja(deferredBlock, context, rng)
         renderedBlock = restoreLibraryCallsInJinja(renderedBlock, lineMap)
         statementLines = [line.strip() for line in renderedBlock.splitlines() if line.strip()]
         if not statementLines:
-            return ""
+            return []
 
         answerLines: list[str] = []
         for statementLine in statementLines:
-            candidates = generateFromLine(statementLine, context)
+            candidates = generateFromLine(statementLine, context, rng)
             if candidates:
                 answerLines.append(candidates[0])
 
-        return "\n".join(answerLines).strip()
+        return answerLines
 
     statementLines = [line.strip() for line in answerBlock.splitlines() if line.strip()]
     if not statementLines:                                              # No answer content provided
-        return ""
+        return []
 
     answerLines: list[str] = []
     for statementLine in statementLines:                                # Render each line and choose a deterministic candidate
-        candidates = generateFromLine(statementLine, context)
+        candidates = generateFromLine(statementLine, context, rng)
         if candidates:
             answerLines.append(candidates[0])                           # For answers, use the first non-empty candidate
 
-    return "\n".join(answerLines).strip()                               # Join multiple lines into the final answer block
+    return answerLines                                                  # Return the full list for multi-select support
 
 # ================ evaluateIncorrect: EVALUATES EACH INCORRECT LINE AS ONE METHOD CALL ================
 # e.g. evaluateIncorrect("distract()\nwrong()", ctx, correct) -> ["42", "17"]
 # Returns a list of incorrect options, skipping duplicates and the correct answer
-def evaluateIncorrect(incorrectBlock: str, context: dict[str, Any], correctAnswer: str) -> list[str]:
+def evaluateIncorrect(
+    incorrectBlock: str,
+    context: dict[str, Any],
+    correctAnswers: list[str],
+    rng: random.Random | None = None,
+) -> list[str]:
     if "{%" in incorrectBlock and "%}" in incorrectBlock:                                       # If Jinja control blocks are present, render the whole block then split lines
-        functionRegistry = getLibraryFunctionRegistry()
+        functionRegistry = getLibraryFunctionRegistry(rng)
         deferredBlock, lineMap = deferLibraryCallsInJinja(incorrectBlock, functionRegistry)
-        incorrectBlock = renderJinja(deferredBlock, context)
+        incorrectBlock = renderJinja(deferredBlock, context, rng)
         incorrectBlock = restoreLibraryCallsInJinja(incorrectBlock, lineMap)
 
     statementLines = [line.strip() for line in incorrectBlock.splitlines() if line.strip()]
@@ -539,16 +560,16 @@ def evaluateIncorrect(incorrectBlock: str, context: dict[str, Any], correctAnswe
         return []
 
     incorrectPool: list[str] = []
-    usedAnswers: set[str] = {correctAnswer}                                                     # Seed the used set with the correct answer so it cannot appear as incorrect
+    usedAnswers: set[str] = set(correctAnswers)                                                 # Seed the used set with the correct answers so none appear as incorrect
 
     for statementLine in statementLines:                                                        # Generate all candidate strings for the line (function call or text)
-        candidates = generateFromLine(statementLine, context)
+        candidates = generateFromLine(statementLine, context, rng)
         if not candidates:
             continue
         filteredPool = [candidate for candidate in candidates if candidate not in usedAnswers]  # Filter out used answers, then choose a random remaining option
         if not filteredPool:
             continue
-        chosen = random.choice(filteredPool)
+        chosen = rng.choice(filteredPool) if rng else random.choice(filteredPool)
 
         # Track and store the chosen incorrect option
         incorrectPool.append(chosen)
@@ -559,7 +580,11 @@ def evaluateIncorrect(incorrectBlock: str, context: dict[str, Any], correctAnswe
 # ================ generateFromLine: CALLS ONE LIBRARY METHOD OR RENDERS ONE TEXT LINE ================
 # e.g. generateFromLine("UInt(1, 3)", ctx) -> ["2"]
 # Returns a list of candidate strings for a single line (may be empty)
-def generateFromLine(statementLine: str, context: dict[str, Any]) -> list[str]:
+def generateFromLine(
+    statementLine: str,
+    context: dict[str, Any],
+    rng: random.Random | None = None,
+) -> list[str]:
     methodMatch = re.match(r"^([A-Za-z_]\w*)\(\s*(.*)\s*\)\s*;?$", statementLine)
     if not methodMatch:                                                         # Treat non-call lines as plain text with Jinja rendering support
         dottedMatch = re.match(r"^([A-Za-z_]\w*)(\.[A-Za-z_]\w*)+\s*$", statementLine)
@@ -567,16 +592,16 @@ def generateFromLine(statementLine: str, context: dict[str, Any]) -> list[str]:
             resolved = resolveDottedValue(statementLine.strip(), context)
             candidate = str(resolved).strip()
             return [candidate] if candidate else []
-        candidate = renderJinja(statementLine, context).strip()
+        candidate = renderJinja(statementLine, context, rng).strip()
         return [candidate] if candidate else []
 
     methodName = methodMatch.group(1)
     argumentBody = methodMatch.group(2)
 
     # Execute the library function referenced by this line (fallback to rendering if not found)
-    functionRegistry = getLibraryFunctionRegistry()
+    functionRegistry = getLibraryFunctionRegistry(rng)
     if methodName not in functionRegistry:
-        candidate = renderJinja(statementLine, context).strip()
+        candidate = renderJinja(statementLine, context, rng).strip()
         return [candidate] if candidate else []
 
     result = callLibraryFunctionByName(methodName, argumentBody, context, functionRegistry)
@@ -591,23 +616,31 @@ def generateFromLine(statementLine: str, context: dict[str, Any]) -> list[str]:
 # ================ generateQuestion: MAIN HIGH-LEVEL API FOR THE FLASK APP ================
 # e.g. generateQuestion(fullTemplateText) -> {"question": "...", "answer": "...", "incorrect": [...], "variables": {...}}
 # Returns the fully rendered question payload for the app
-def generateQuestion(templateText: str, promptText: str = "", feedbackText: str = "") -> dict[str, Any]:
+def generateQuestion(
+    templateText: str,
+    promptText: str = "",
+    feedbackText: str = "",
+    seed: int | None = None,
+) -> dict[str, Any]:
+    if not promptText.strip():
+        raise TemplateProcessingError("ERROR at: missing prompt content")
+    rng = random.Random(seed) if seed is not None else random.Random()
     # Evaluate variables first so later sections can reference them
     sections = parseSections(templateText)
-    context = evaluateVariables(sections.variables)
+    context = evaluateVariables(sections.variables, rng)
 
     # Render each section using the appropriate parser/renderer
-    renderedPrompt = evaluateAnswer(promptText, context)
-    renderedQuestion = renderJinja(sections.question, context).strip()
-    renderedAnswer = evaluateAnswer(sections.answer, context)
-    renderedIncorrect = evaluateIncorrect(sections.incorrect, context, correctAnswer=renderedAnswer)
-    renderedFeedback = evaluateAnswer(feedbackText, context)
+    renderedPromptLines = evaluateAnswer(promptText, context, rng)
+    renderedQuestion = renderJinja(sections.question, context, rng).strip()
+    renderedAnswers = evaluateAnswer(sections.answer, context, rng)
+    renderedIncorrect = evaluateIncorrect(sections.incorrect, context, correctAnswers=renderedAnswers, rng=rng)
+    renderedFeedbackLines = evaluateAnswer(feedbackText, context, rng)
 
     # Return the final response payload
     return {
-        "prompt": renderedPrompt,
+        "prompt": "\n".join(renderedPromptLines).strip(),
         "question": renderedQuestion,
-        "answer": renderedAnswer,
+        "answer": renderedAnswers,
         "incorrect": renderedIncorrect,
-        "feedback": renderedFeedback,
+        "feedback": "\n".join(renderedFeedbackLines).strip(),
     }

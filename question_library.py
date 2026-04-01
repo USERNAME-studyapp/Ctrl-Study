@@ -107,25 +107,38 @@ _DATA_TYPES: dict[str, int] = {
 
 # ================ UInt: CREATES A RANDOM UNSIGNED INTEGER WITH EXPLICIT NAME AND RANGE ================
 # Use: UInt(myVar, 4, 10)
-def UInt(name: str = "value", minValue: int = 0, maxValue: int = 100) -> UIntValue:
+def UInt(
+    name: str = "value",
+    minValue: int = 0,
+    maxValue: int = 100,
+    rng: random.Random | None = None,
+) -> UIntValue:
     # Validates range rules for unsigned integer generation
     if minValue < 0 or maxValue < 0 or minValue > maxValue:
         raise ValueError("UInt range must be non-negative and min <= max.")
 
     # Generates the value and returns a structured UIntValue object
-    randomValue = random.randint(minValue, maxValue)
+    rng = rng or random
+    randomValue = rng.randint(minValue, maxValue)
     return UIntValue(value=randomValue, name=name)
 
 
 # ================ UFloat: CREATES A RANDOM UNSIGNED FLOAT WITH EXPLICIT NAME AND RANGE ================
 # Use: UFloat(myVar, 0.0, 10.0, 2)
-def UFloat(name: str = "value", minValue: float = 0.0, maxValue: float = 100.0, precision: int | None = 2) -> UNumberValue:
+def UFloat(
+    name: str = "value",
+    minValue: float = 0.0,
+    maxValue: float = 100.0,
+    precision: int | None = 2,
+    rng: random.Random | None = None,
+) -> UNumberValue:
     # Validates range rules for unsigned float generation
     if minValue < 0 or maxValue < 0 or minValue > maxValue:
         raise ValueError("UFloat range must be non-negative and min <= max.")
 
     # Generates the value and returns a structured UNumberValue object
-    randomValue = random.uniform(minValue, maxValue)
+    rng = rng or random
+    randomValue = rng.uniform(minValue, maxValue)
     if precision is not None:
         randomValue = round(randomValue, precision)
     return UNumberValue(value=randomValue, name=name)
@@ -142,6 +155,7 @@ def LoopInt(
     stepMin: int = 1,
     stepMax: int = 3,
     allowDecrement: bool = False,
+    rng: random.Random | None = None,
 ) -> LoopIntValue:
     
     # Validates bound ranges
@@ -153,16 +167,17 @@ def LoopInt(
         raise ValueError("LoopInt step bounds must be positive and stepMin <= stepMax.")
 
     # Tries multiple random combinations until a valid non-empty loop is found
+    rng = rng or random
     for _ in range(200):
-        start = random.randint(startMin, startMax)
-        end = random.randint(endMin, endMax)
-        stepMagnitude = random.randint(stepMin, stepMax)
+        start = rng.randint(startMin, startMax)
+        end = rng.randint(endMin, endMax)
+        stepMagnitude = rng.randint(stepMin, stepMax)
 
         # Chooses increment/decrement step direction
         stepChoices = [stepMagnitude]
         if allowDecrement:
             stepChoices.append(-stepMagnitude)
-        step = random.choice(stepChoices)
+        step = rng.choice(stepChoices)
 
         # Builds candidate values and skips empty loops
         if step == 0:
@@ -207,54 +222,57 @@ def nameGen() -> Name:
 
 # ================ charGen: GENERATES A SIMPLE LOWERCASE LETTER ================
 # Use: charGen(var1.name) -> "a" or "b" or ... "z"; for simple variable names or character-based questions
-def charGen(*exclude: str) -> str:
+def charGen(*exclude: str, rng: random.Random | None = None) -> str:
     excluded = {c.lower() for c in exclude if len(c) == 1}              # normalize exclusion set
     pool = [chr(i) for i in range(97, 123) if chr(i) not in excluded]   # builds pool of lowercase letters excluding any in the exclusion set
     if not pool:                                                        # if pool empty, raise error
         raise ValueError("charGen exclusion list removes all letters.")
-    return random.choice(pool)                                          # returns a random letter from the remaining pool
+    rng = rng or random
+    return rng.choice(pool)                                             # returns a random letter from the remaining pool
 
 # ================ greaterThan: RETURNS A RANDOM INTEGER THAT IS STRICLY GREATER THAN THE BASE ================
 # Use: greaterThan(myVar) or greaterThan(5)
-def greaterThan(base: Any) -> Any:
+def greaterThan(base: Any, rng: random.Random | None = None) -> Any:
+    rng = rng or random
     if isinstance(base, UNumberValue):                                           # Supports numeric library values (int or float)
         baseValue = float(base.value)
         if isinstance(base.value, float) and not base.value.is_integer():
-            return random.uniform(baseValue + 0.1, baseValue + 10.0)
-        return random.randint(int(baseValue) + 1, int(baseValue) + 10)
+            return rng.uniform(baseValue + 0.1, baseValue + 10.0)
+        return rng.randint(int(baseValue) + 1, int(baseValue) + 10)
 
     baseValue = float(base)
     if isinstance(base, float) and not base.is_integer():
-        return random.uniform(baseValue + 0.1, baseValue + 10.0)
-    return random.randint(int(baseValue) + 1, int(baseValue) + 10)
+        return rng.uniform(baseValue + 0.1, baseValue + 10.0)
+    return rng.randint(int(baseValue) + 1, int(baseValue) + 10)
 
 
 # ================ lessThan: RETURNS A RANDOM INTEGER THAT IS STRICLY LESS THAN THE BASE ================
 # Use: lessThan(myVar) or lessThan(5)
-def lessThan(base: Any) -> Any:
+def lessThan(base: Any, rng: random.Random | None = None) -> Any:
+    rng = rng or random
     if isinstance(base, UNumberValue):                                           # Supports numeric library values (int or float)
         baseValue = float(base.value)
         if isinstance(base.value, float) and not base.value.is_integer():
             if baseValue <= 0.1:
                 return 0.0
-            return random.uniform(0.0, baseValue - 0.1)
+            return rng.uniform(0.0, baseValue - 0.1)
         if baseValue <= 1:
             return 0
-        return random.randint(0, int(baseValue) - 1)
+        return rng.randint(0, int(baseValue) - 1)
 
     baseValue = float(base)
     if isinstance(base, float) and not base.is_integer():
         if baseValue <= 0.1:
             return 0.0
-        return random.uniform(0.0, baseValue - 0.1)
+        return rng.uniform(0.0, baseValue - 0.1)
     if baseValue <= 1:
         return 0
-    return random.randint(0, int(baseValue) - 1)
+    return rng.randint(0, int(baseValue) - 1)
 
 
 # ================ choose: RETURNS ONE LABELED OPTION FOR TEMPLATE CONDITION LOGIC ================
 # Use: whichWay = choose(("does not", False), ("does", True))
-def choose(*options: tuple[Any, Any]) -> ChoiceValue:
+def choose(*options: tuple[Any, Any], rng: random.Random | None = None) -> ChoiceValue:
     if not options:                                                             # Validates that at least one option is provided
         raise ValueError("choose expects at least one (text, value) option.")
 
@@ -265,11 +283,12 @@ def choose(*options: tuple[Any, Any]) -> ChoiceValue:
         text, value = option
         normalized.append(ChoiceValue(text=str(text), value=value))
 
-    return random.choice(normalized)                                            # Returns one random option for use in templates
+    rng = rng or random
+    return rng.choice(normalized)                                               # Returns one random option for use in templates
 
 # ================ randomDataType: RETURNS A RANDOM DATA TYPE STRING ================
 # Use: randomDataType() or randomDataType("double", "float")
-def randomDataType(*exclude: str) -> str:
+def randomDataType(*exclude: str, rng: random.Random | None = None) -> str:
     if not _DATA_TYPES:
         raise ValueError("randomDataType has no available data types.")
 
@@ -279,7 +298,8 @@ def randomDataType(*exclude: str) -> str:
     if not pool:
         raise ValueError("randomDataType exclusion list removes all data types.")
 
-    return random.choice(pool)
+    rng = rng or random
+    return rng.choice(pool)
 
 
 # ____________________________________________ VALUE METHODS _________________________________________
@@ -320,21 +340,29 @@ def repeat(value: Any, count: int) -> str:
 
 # ================ randIntArray: GENERATES A RANDOM INT LIST ================
 # Use: randIntArray(4, 8, 1, 20, True)
-def randIntArray(sizeMin: int, sizeMax: int, valueMin: int, valueMax: int, unique: bool = False) -> list[int]:
+def randIntArray(
+    sizeMin: int,
+    sizeMax: int,
+    valueMin: int,
+    valueMax: int,
+    unique: bool = False,
+    rng: random.Random | None = None,
+) -> list[int]:
     if sizeMin < 0 or sizeMax < 0 or sizeMin > sizeMax:
         raise ValueError("randIntArray size bounds must be non-negative and sizeMin <= sizeMax.")
     if valueMin > valueMax:
         raise ValueError("randIntArray value bounds must have valueMin <= valueMax.")
 
-    size = random.randint(sizeMin, sizeMax)
+    rng = rng or random
+    size = rng.randint(sizeMin, sizeMax)
 
     if unique:
         poolSize = valueMax - valueMin + 1
         if size > poolSize:
             raise ValueError("randIntArray unique range is smaller than requested size.")
-        return random.sample(range(valueMin, valueMax + 1), size)
+        return rng.sample(range(valueMin, valueMax + 1), size)
 
-    return [random.randint(valueMin, valueMax) for _ in range(size)]
+    return [rng.randint(valueMin, valueMax) for _ in range(size)]
 
 # ================ arrayDec: BUILDS A C++ ARRAY DECLARATION STRING ================
 # Use: arrayDec("int", "values", [2, 6, 10, 14])
@@ -351,7 +379,7 @@ def arrayDec(typeName: str, name: str, values: list[Any]) -> str:
 
 # ================ randomLoop: CREATES A DYNAMIC LOOP RENDER GIVEN A LOOP INTEGER AND BODY (C++ ONLY FOR NOW!!!!) ================
 # Use: randLoopVar = randomLoop(loopIntValue, loopBodyString1, loopBodyString2, ...)
-def randomLoop(loopInt: LoopIntValue, *bodyLines: str) -> str:
+def randomLoop(loopInt: LoopIntValue, *bodyLines: str, rng: random.Random | None = None) -> str:
     # Validates loop variable type for predictable rendering.
     if not isinstance(loopInt, LoopIntValue):
         raise ValueError("randomLoop expects a LoopIntValue as the first argument.")
@@ -377,7 +405,8 @@ def randomLoop(loopInt: LoopIntValue, *bodyLines: str) -> str:
         renderedBody = "\n".join(f"\t{line}" for line in flattenedBody)
 
     # Randomly chooses between for-loop and while-loop structures.
-    loopStyle = random.choice(["for", "while"])
+    rng = rng or random
+    loopStyle = rng.choice(["for", "while"])
 
     if loopStyle == "for":
         # Renders a C++ for-loop with the loop variable and bounds.
@@ -400,7 +429,12 @@ def randomLoop(loopInt: LoopIntValue, *bodyLines: str) -> str:
 
 # ================ combinations: RENDERS UNIQUE PERMUTATIONS FROM A JINJA FORMAT STRING AND SOURCE VALUES ================
 # Use: combinations("{{ x }} {{ y }}", var1, var2, ...)
-def combinations(formatString: str, *values: Any, exclude: str | None = None) -> list[str]:
+def combinations(
+    formatString: str,
+    *values: Any,
+    exclude: str | None = None,
+    rng: random.Random | None = None,
+) -> list[str]:
     placeholders = re.findall(r"{{\s*([A-Za-z_]\w*)\s*}}", formatString)        # Reads placeholder names like x, y, z from blocks like {{ x }}
 
     uniquePlaceholders: list[str] = []
@@ -432,7 +466,8 @@ def combinations(formatString: str, *values: Any, exclude: str | None = None) ->
 
     # Randomizes final ordering so output varies per generation
     results = list(rendered)
-    random.shuffle(results)
+    rng = rng or random
+    rng.shuffle(results)
     return results
 
 

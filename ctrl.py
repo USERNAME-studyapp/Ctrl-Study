@@ -61,6 +61,13 @@ combinations("{{ x }} {{ y }}", out1, out2, out3, out4)
 def formatPreview(payload: dict[str, Any]) -> str:
     # Pulls prompt text if present
     prompt = payload.get("prompt", "")
+    # Pulls answers and formats them as bullet-like lines
+    answers = payload.get("answer", [])
+    if isinstance(answers, list):
+        answerLines = "\n".join(f"- {item}" for item in answers) or "(none)"
+    else:
+        answerLines = str(answers)
+
     # Pulls incorrect answers and formats them as bullet-like lines
     incorrect = payload.get("incorrect", [])
     incorrectLines = "\n".join(f"- {item}" for item in incorrect) or "(none)"
@@ -73,8 +80,8 @@ def formatPreview(payload: dict[str, Any]) -> str:
         f"{prompt}\n\n"
         "QUESTION:\n"
         f"{payload['question']}\n\n"
-        "ANSWER:\n"
-        f"{payload['answer']}\n\n"
+        "ANSWER(S):\n"
+        f"{answerLines}\n\n"
         "INCORRECT OPTIONS:\n"
         f"{incorrectLines}\n\n"
         "FEEDBACK:\n"

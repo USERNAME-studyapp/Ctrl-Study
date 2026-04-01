@@ -158,6 +158,30 @@ def SetQuestionTags(questionId: int, tagIds: list[int]) -> None:
     if insertError:
         raise RuntimeError(f"Supabase insert failed: {insertError}")
 
+# ================ FetchFilteredQuestions: FETCH ALL QUESTIONS BASED ON FILTERS ================
+def FetchFilteredQuestions(tags: list[str], questionTypes: list[str]) -> list[int]:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+    
+    # lol, tl note: I want the ID of questions that have a question_type in the questionTypes list AND have at least one tag in the tags list
+    response = ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_type", questionTypes).in_("question_tags.tags.name", tags).execute()
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+    
+    data = getattr(response, "data", None)
+    if isinstance(data, list):
+        # apparently set() is specific for uniqueness
+        questionIds = set()
+        for item in data:
+            questionId = item.get("id")
+            if questionId is not None:
+                questionIds.add(questionId)
+        return list(questionIds)
+
+    return []
+
+
 # ================ FetchAllTags: FETCH ALL TAGS FROM "tags" TABLE ================
 def FetchAllTags() -> list[dict[str, Any]]:
     if not url or not key:
