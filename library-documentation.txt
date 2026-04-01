@@ -63,3 +63,6 @@ question_library.py VERSION 2.0 POWER UP (3/27)
     lines(*parts)
         - Joins the given values with newline characters.
         - Useful for multi-line outputs in answer/incorrect templates.
+    compareStrings(str1, str2, operator)
+        - Compares string 1 to string 2 using the given operator
+        - Useful for random comparison operators

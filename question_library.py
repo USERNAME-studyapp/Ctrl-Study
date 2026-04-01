@@ -427,6 +427,24 @@ def randomLoop(loopInt: LoopIntValue, *bodyLines: str, rng: random.Random | None
         "}"
     )
 
+# ================ compareStrings: COMPARES TWO STRINGS BASED ON A GIVEN OPERATOR ================
+# Use: compareStrings("apple", "banana", "<") -> True
+def compareStrings(a: str, b: str, op: str) -> bool:
+    if op == "==":
+        return a == b
+    elif op == "!=":
+        return a != b
+    elif op == "<":
+        return a < b
+    elif op == "<=":
+        return a <= b
+    elif op == ">":
+        return a > b
+    elif op == ">=":
+        return a >= b
+    else:
+        raise ValueError(f"Unsupported comparison operator: {op}")
+
 # ================ combinations: RENDERS UNIQUE PERMUTATIONS FROM A JINJA FORMAT STRING AND SOURCE VALUES ================
 # Use: combinations("{{ x }} {{ y }}", var1, var2, ...)
 def combinations(
