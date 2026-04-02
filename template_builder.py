@@ -224,7 +224,7 @@ def handleGenerate(action: str, state: dict[str, Any], selectedQuestionIdValue: 
 
 
 # index handles page load and all form actions
-def templateIndex() -> str:
+def templateIndex():
     state = defaultState()
 
     # Loads questions and tags
@@ -260,7 +260,7 @@ def templateIndex() -> str:
 
     # Renders the page with current form state and saved-question list
     return render_template(
-        "index.html",
+        "builder.html",
         template_text=state["templateText"],
         prompt_text=state["promptText"],
         feedback_text=state["feedbackText"],
