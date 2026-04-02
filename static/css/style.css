@@ -5,4 +5,31 @@
 body {
     background-color: Canvas;
     color: CanvasText;
+    font-family: sans-serif;
+}
+
+/* ✅ Shared button style */
+button,
+.btn {
+    padding: 10px 16px;
+    margin: 5px 0;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+
+    background-color: #007BFF;
+    color: white;
+}
+
+/* Hover effect */
+button:hover,
+.btn:hover {
+    background-color: #0056b3;
+}
+
+/* Make links look like buttons */
+.btn {
+    display: inline-block;
+    text-decoration: none;
 }

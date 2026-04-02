@@ -113,8 +113,14 @@ def parseQuestionId(rawId: str) -> int | None:
         return None
 
 
+# proper home page
+@app.route("/", methods=["GET"])
+@app.route("/home", methods=["GET"])
+def home():
+    return render_template("home.html", title="Home")
+
 # index handles page load and all form actions
-@app.route("/", methods=["GET", "POST"])
+@app.route("/template", methods=["GET", "POST"])
 def index() -> str:
     # Initializes page state defaults
     templateText = defaultTemplate

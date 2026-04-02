@@ -11,9 +11,14 @@
             href="{{ url_for('static', filename='css/style.css') }}"
         />
     </head>
-    <body style="font-family: sans-serif">
-        <div>Ctrl Study: <a href="/">Home</a> <a href="/questions">Questions</a></div>
+    <body>
+        <div style="margin-bottom: 15px;">
+            <strong>Ctrl Study</strong> |
+            <a href="/" class="btn">Home</a>
+        </div>
+
         <hr />
+
         {% block content %}{% endblock %}
     </body>
 </html>
