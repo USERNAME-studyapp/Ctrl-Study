@@ -21,6 +21,8 @@ from typing import cast
 from datetime import timedelta
 from flask_session import Session
 
+from flask import redirect, url_for
+
 import supabase_client
 import template_builder
 
@@ -59,8 +61,10 @@ def question():
 
     question: QuestionFetch.QuestionContainer
     if "randQuestion" not in session:
-        question = QuestionFetch.getRandomQuestion()
-        session["randQuestion"] = QuestionFetch.getRandomQuestion()
+        q = QuestionFetch.getRandomQuestion()
+        if q is not None:
+            question = q
+            session["randQuestion"] = question
 
     question = session["randQuestion"]
     form = QuestionFetch.getQuestionForm(question)
@@ -90,25 +94,39 @@ def question():
         "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=False
     )
 
+@app.route("/quizQuestions", methods=["GET", "POST"])
+def quizQuestions():
+    quizQuestionTags: list[str] = session.get("quizQuestionTags", None)
+    quizQuestionTypes: list[str] = session.get("quizQuestionTypes", None)
+    print(f"Fetching quiz questions with tags: {quizQuestionTags} and types: {quizQuestionTypes}")
+    with ThreadPoolExecutor() as executor:
+        questions = list(executor.map(lambda _: QuestionFetch.getRandomQuestion(tags=quizQuestionTags, types=quizQuestionTypes), range(10)))
+    # session["questions"] = questions
+
+    questions = [q for q in questions if q is not None]
+    forms = [QuestionFetch.getQuestionForm(q) for q in list(set(questions))]
+    session.pop("quizQuestionTags", None)
+    session.pop("quizQuestionTypes", None)
+    return render_template("quizQuestions.html", questions=forms)
 
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
     tags = supabase_client.FetchAllTags()
     types = ["multiple_choice", "multiple_select", "short_answer", "true_false"]
-    tags = [(tag["id"], tag["name"]) for tag in tags]
-    form = SetupQuizForm(types=types, tags=tags)
-    # if form.validate_on_submit():
-    #     selected_tag_ids = form.tagSelection.data
-    #     return redirect(url_for("quiz", selected_tag_ids=selected_tag_ids))
+    ts = [(tag["id"], tag["name"]) for tag in tags]
+    form = SetupQuizForm(types=types, tags=ts)
+    if form.validate_on_submit():
+        print(form.tagSelection.data, form.questionTypes.data)
+        t = form.tagSelection.data
+        print(t)
+        if t is not None:
+            tag = [ts[int(id)-1][1] for id in t]
+            session["quizQuestionTags"] = tag
+        session["quizQuestionTypes"] = form.questionTypes.data
+        return redirect(url_for("quizQuestions"))
     return render_template("QuizSetup.html", tags=tags, form=form)
 
-@app.route("/quizQuestions", methods=["GET", "POST"])
-def manyQuestions():
-    with ThreadPoolExecutor() as executor:
-        questions = list(executor.map(lambda _: QuestionFetch.getRandomQuestion(generateNew=True), range(10)))
 
-    forms = [QuestionFetch.getQuestionForm(q) for q in questions]
-    return render_template("quizQuestions.html", questions=forms)
 
 
 # Starts local development server when run directly

@@ -26,10 +26,28 @@ class QuestionContainer:
         self.answer = answer
         self.type = type
 
-def getRandomQuestion(tags: list[str] | None = None, generateNew: bool = False) -> QuestionContainer:
-    def getDbQuestion() -> dict[str, str]:
-        questionID = random.choice(questionIDs)
-        c = supabase_client.FetchQuestionById(questionID["id"])
+    def __hash__(self):
+        return hash(
+            (self.prompt,
+            self.question,
+            self.feedback,
+            self.type)
+        )
+
+def getRandomQuestion(tags: list[str] | None = None, types: list[str] | None = None, generateNew: bool = False) -> QuestionContainer | None:
+    def getDbQuestion() -> dict[str, str] | None:
+        if (tags != [] and tags is not None) and (types != [] and types is not None):
+            print(f"Fetching question with tags: {tags} and types: {types}")
+            options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types)
+            print(options)
+            if not options:
+                return None
+            questionID = random.choice(options)
+            c = supabase_client.FetchQuestionById(questionID)
+        else:
+            questionID = random.choice(questionIDs)
+            c = supabase_client.FetchQuestionById(questionID["id"])
+
         if c is None:
             raise ValueError("Question not found.")
         return {"type": c["question_type"], "template": c["prompt_template"], "prompt": c["question_template"], "feedback": c["feedback_template"]}
@@ -40,6 +58,8 @@ def getRandomQuestion(tags: list[str] | None = None, generateNew: bool = False) 
         return cast(Any, opt)
 
     q = getDbQuestion()
+    if q is None:
+        return None
     gq = generateQuestion(
         templateText=q["template"], promptText=q["prompt"], feedbackText=q["feedback"]
     )
