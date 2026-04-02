@@ -1,0 +1,20 @@
+{% extends "base.html" %} {% block content %}
+<h1>Question</h1>
+<p><b>{{ form.prompt }}</b></p>
+
+<!--<pre><code style="tab-size: 4;">{{ form.question }}</code></pre>-->
+<div style="width: fit-content">{{ form.format_html()|safe }}</div>
+<form action="" method="post" novalidate>
+    {{ form.hidden_tag() }} {% for subfield in form.choice %}
+    <div class="radio-option">
+        {{ subfield(disabled = true if status != 'answer pls' else false) }} {{
+        subfield.label(style = "color: green" if (status != 'answer pls' and
+        subfield.data == form.correct) else "inherit") }}
+    </div>
+    {% endfor %}
+    <p>
+        {{ form.submit(value='Next' if status != 'answer pls' else 'Submit') }}
+    </p>
+</form>
+<h3>{{ status }}</h3>
+{% endblock %}

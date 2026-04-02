@@ -23,6 +23,11 @@ from supabase_client import (                                                   
     DeleteQuestion,
 )
 
+from Frontend.QuestionFetch import getRandomQuestion
+from Frontend.forms import RadioQuestionForm
+
+from typing import cast
+
 # app is the Flask application instance
 app = Flask(__name__)
 app.secret_key = "template-question-builder-secret"
@@ -290,6 +295,22 @@ def index() -> str:
         status_message=statusMessage,
     )
 
+@app.route("/question", methods=["GET", "POST"])
+def question():
+    form = cast(RadioQuestionForm, getRandomQuestion())
+
+    if form.validate_on_submit():
+        print("answered {}".format(form.choice.data))
+        status: str = "Correct" if form.choice.data == form.correct else f"Incorrect: {form.feedback}"
+        if status != "answer pls":
+            session.pop("randQuestion")
+        return render_template(
+            "individualQuestion.html", title="Question", form=form, status=status
+        )
+
+    return render_template(
+        "individualQuestion.html", title="Question", form=form, status="answer pls"
+    )
 
 # Starts local development server when run directly
 if __name__ == "__main__":

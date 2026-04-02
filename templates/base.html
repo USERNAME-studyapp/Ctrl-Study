@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }}</title>
+        {% else %}
+        <title>Ctrl Study</title>
+        {% endif %}
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/style.css') }}"
+        />
+    </head>
+    <body style="font-family: sans-serif">
+        <div>Ctrl Study: <a href="/">Home</a></div>
+        <hr />
+        {% block content %}{% endblock %}
+    </body>
+</html>

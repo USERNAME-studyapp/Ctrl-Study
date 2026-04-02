@@ -157,7 +157,7 @@ def LoopInt(
     allowDecrement: bool = False,
     rng: random.Random | None = None,
 ) -> LoopIntValue:
-    
+
     # Validates bound ranges
     if startMin > startMax:
         raise ValueError("LoopInt startMin must be <= startMax.")

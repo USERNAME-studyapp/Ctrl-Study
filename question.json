@@ -1,0 +1,11 @@
+{
+    "prompt": "",
+    "question": "",
+    "answers": {
+        "correct": ""
+        "incorrect": [
+            "incorrect1",
+            "incorrect2"
+        ]
+    }
+}
