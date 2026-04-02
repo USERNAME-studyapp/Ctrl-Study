@@ -31,7 +31,7 @@ def getRandomQuestion() -> QuestionForm:
         )
         gq = session["randQuestion"]
         session["randQuestion"]["answers"] = randomizeAnswers(
-            [*gq["incorrect"], gq["answer"]]
+            [*gq["incorrect"], *gq["answer"]]
         )
 
     generatedQuestion = session["randQuestion"]

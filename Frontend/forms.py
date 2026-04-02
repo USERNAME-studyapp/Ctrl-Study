@@ -1,9 +1,17 @@
+from flask.app import Flask
 from flask_wtf import FlaskForm
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import CppLexer
-from wtforms import RadioField, SubmitField
+from wtforms import RadioField, SubmitField, SelectMultipleField
 from wtforms.validators import DataRequired
+
+# class MultiCheckboxField(SelectMultipleField):
+#     widget = widgets.ListWidget(prefix_label=False)
+#     option_widget = widgets.CheckboxInput()
+
+# class SetupQuizForm(FlaskForm):
+
 
 class QuestionForm(FlaskForm):
     prompt: str
@@ -13,7 +21,7 @@ class QuestionForm(FlaskForm):
 class RadioQuestionForm(QuestionForm):
     prompt: str
     question: str
-    correct: str
+    correct: list[str]
     feedback: str
     choice = RadioField("Answers", validators=[DataRequired()])
     submit = SubmitField("Submit")
@@ -22,7 +30,7 @@ class RadioQuestionForm(QuestionForm):
         self,
         prompt: str,
         question: str,
-        correct: str,
+        correct: list[str],
         feedback: str,
         answerChoices: list[str],
         *args,

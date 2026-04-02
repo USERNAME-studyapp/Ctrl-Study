@@ -30,6 +30,8 @@ from typing import cast
 from datetime import timedelta
 from flask_session import Session
 
+import supabase_client
+
 
 # app is the Flask application instance
 app = Flask(__name__)
@@ -311,7 +313,7 @@ def question():
 
     if form.validate_on_submit():
         print("answered {}".format(form.choice.data))
-        status: str = "Correct" if form.choice.data == form.correct else f"Incorrect: {form.feedback}"
+        status: str = "Correct" if form.choice.data in form.correct else f"Incorrect: {form.feedback}"
         if status != "answer pls":
             session.pop("randQuestion")
         return render_template(
@@ -321,6 +323,13 @@ def question():
     return render_template(
         "individualQuestion.html", title="Question", form=form, status="answer pls"
     )
+
+
+@app.route("/quiz", methods=["GET", "POST"])
+def quiz():
+    tags = supabase_client.FetchAllTags()
+    return render_template("QuizSetup.html", tags=tags)
+
 
 # Starts local development server when run directly
 if __name__ == "__main__":

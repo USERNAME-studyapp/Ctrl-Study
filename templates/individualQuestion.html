@@ -9,7 +9,7 @@
     <div class="radio-option">
         {{ subfield(disabled = true if status != 'answer pls' else false) }} {{
         subfield.label(style = "color: green" if (status != 'answer pls' and
-        subfield.data == form.correct) else "inherit") }}
+        subfield.data in form.correct) else "inherit") }}
     </div>
     {% endfor %}
     <p>
