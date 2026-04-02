@@ -66,3 +66,6 @@ question_library.py VERSION 2.0 POWER UP (3/27)
     compareStrings(str1, str2, operator)
         - Compares string 1 to string 2 using the given operator
         - Useful for random comparison operators
+    chooseMultiple(count, (text, value), ...)
+        - Chooses count amount of tuples as ChoiceValues and returns the list of ChoiceValues
+        - Useful for multiple_select I hope.

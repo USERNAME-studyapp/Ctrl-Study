@@ -286,6 +286,28 @@ def choose(*options: tuple[Any, Any], rng: random.Random | None = None) -> Choic
     rng = rng or random
     return rng.choice(normalized)                                               # Returns one random option for use in templates
 
+# ================ chooseMultiple: RETURNS MULTIPLE LABELED OPTIONS FOR TEMPLATE CONDITION LOGIC ================
+# Use: chMult = choose(2, ("does not", False), ("does", True), ("monkey", True))
+def chooseMultiple(count: int, *options: tuple[Any, Any], rng: random.Random | None = None) -> list[ChoiceValue]:
+    if count < 1:
+        raise ValueError("chooseMultiple expects a positive integer count.")
+    if not options:
+        raise ValueError("chooseMultiple expects at least one (text, value) option.")
+
+    normalized: list[ChoiceValue] = []                                          # Normalizes each option to a (text, value) pair
+    for option in options:
+        if not isinstance(option, tuple) or len(option) != 2:
+            raise ValueError("chooseMultiple expects options shaped like (text, value).")
+        text, value = option
+        normalized.append(ChoiceValue(text=str(text), value=value))
+
+    if count > len(normalized):
+        raise ValueError("chooseMultiple count cannot exceed the number of provided options.")
+
+    rng = rng or random
+    return rng.sample(normalized, count)                                               # Returns the requested number of random options for use in templates
+
+
 # ================ randomDataType: RETURNS A RANDOM DATA TYPE STRING ================
 # Use: randomDataType() or randomDataType("double", "float")
 def randomDataType(*exclude: str, rng: random.Random | None = None) -> str:
