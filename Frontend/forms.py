@@ -1,7 +1,3 @@
-from operator import sub
-import random
-from collections.abc import Sequence
-
 from flask_wtf import FlaskForm
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
