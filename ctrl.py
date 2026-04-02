@@ -45,7 +45,7 @@ def home():
     return render_template("index.html", title="Ctrl-Study: Home")
 
 @app.route("/template", methods=["GET", "POST"])
-def templateIndex() -> str:
+def templateIndex():
     return template_builder.templateIndex()
 
 
