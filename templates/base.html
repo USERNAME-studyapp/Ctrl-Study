@@ -10,15 +10,17 @@
             rel="stylesheet"
             href="{{ url_for('static', filename='css/style.css') }}"
         />
+        {% block head %}
+        {% endblock %}
     </head>
     <body>
         <div style="margin-bottom: 15px;">
             <strong>Ctrl Study</strong> |
             <a href="/" class="btn">Home</a>
         </div>
-
         <hr />
 
-        {% block content %}{% endblock %}
+        {% block body %}
+        {% endblock %}
     </body>
 </html>

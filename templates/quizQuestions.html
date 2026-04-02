@@ -1,0 +1,11 @@
+{% extends "base.html" %} {% block body %}
+{% for question in questions %}
+<div>
+{{ question.hidden_tag() }}
+{{ question.prompt }}
+<div style="width: fit-content">{{ question.format_html()|safe }}</div>
+{{ question.answer(style="list-style:none") }}
+</div>
+<hr>
+{% endfor %}
+{% endblock %}
