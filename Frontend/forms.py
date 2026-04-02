@@ -3,15 +3,20 @@ from flask_wtf import FlaskForm
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import CppLexer
-from wtforms import RadioField, SubmitField, SelectMultipleField
+from wtforms import RadioField, SubmitField, SelectMultipleField, widgets
 from wtforms.validators import DataRequired
 
-# class MultiCheckboxField(SelectMultipleField):
-#     widget = widgets.ListWidget(prefix_label=False)
-#     option_widget = widgets.CheckboxInput()
+class MultiCheckboxField(SelectMultipleField):
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
 
-# class SetupQuizForm(FlaskForm):
+class SetupQuizForm(FlaskForm):
+    tagSelection = MultiCheckboxField("Tag Selection")
+    submit = SubmitField("Submit")
 
+    def __init__(self, tags: list[tuple[str, str]], *args, **kwargs):
+        super(SetupQuizForm, self).__init__(*args, **kwargs)
+        self.tagSelection.choices = [(id, name) for (id,name) in tags]
 
 class QuestionForm(FlaskForm):
     prompt: str

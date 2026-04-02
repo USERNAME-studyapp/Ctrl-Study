@@ -24,7 +24,7 @@ from supabase_client import (                                                   
 )
 
 from Frontend.QuestionFetch import getRandomQuestion
-from Frontend.forms import RadioQuestionForm
+from Frontend.forms import RadioQuestionForm, SetupQuizForm
 
 from typing import cast
 from datetime import timedelta
@@ -328,7 +328,8 @@ def question():
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
     tags = supabase_client.FetchAllTags()
-    return render_template("QuizSetup.html", tags=tags)
+    form = SetupQuizForm(tags=[(tag["id"], tag["name"]) for tag in tags])
+    return render_template("QuizSetup.html", tags=tags, form=form)
 
 
 # Starts local development server when run directly
