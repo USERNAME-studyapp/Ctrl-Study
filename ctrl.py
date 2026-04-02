@@ -27,11 +27,21 @@ from Frontend.QuestionFetch import getRandomQuestion
 from Frontend.forms import RadioQuestionForm
 
 from typing import cast
+from datetime import timedelta
+from flask_session import Session
+
 
 # app is the Flask application instance
 app = Flask(__name__)
 app.secret_key = "template-question-builder-secret"
 
+app.config["SESSION_FILE_DIR"] = "./flask_session_cache"
+
+app.config["SESSION_PERMANENT"] = False  # Sessions expire when the browser is closed
+app.config["SESSION_TYPE"] = "filesystem"  # Store session data in files
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=6)
+
+Session(app)
 
 # defaultTemplate pre-fills the editor with a working starter template
 defaultTemplate = """variables:
