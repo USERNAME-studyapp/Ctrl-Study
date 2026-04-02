@@ -7,3 +7,4 @@ goal.txt
 test.txt
 
 .DS_Store
+flask_session_cache/
