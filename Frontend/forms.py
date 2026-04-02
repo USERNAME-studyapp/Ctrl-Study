@@ -11,11 +11,13 @@ class MultiCheckboxField(SelectMultipleField):
     option_widget = widgets.CheckboxInput()
 
 class SetupQuizForm(FlaskForm):
+    questionTypes = MultiCheckboxField("Question Types")
     tagSelection = MultiCheckboxField("Tag Selection")
     submit = SubmitField("Submit")
 
-    def __init__(self, tags: list[tuple[str, str]], *args, **kwargs):
+    def __init__(self, types: list[str], tags: list[tuple[str, str]], *args, **kwargs):
         super(SetupQuizForm, self).__init__(*args, **kwargs)
+        self.questionTypes.choices = [(t, t) for t in types]
         self.tagSelection.choices = [(id, name) for (id,name) in tags]
 
 class QuestionForm(FlaskForm):

@@ -328,7 +328,12 @@ def question():
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
     tags = supabase_client.FetchAllTags()
-    form = SetupQuizForm(tags=[(tag["id"], tag["name"]) for tag in tags])
+    types = ["multiple_choice", "multiple_select", "short_answer", "true_false"]
+    tags = [(tag["id"], tag["name"]) for tag in tags]
+    form = SetupQuizForm(types=types, tags=tags)
+    # if form.validate_on_submit():
+    #     selected_tag_ids = form.tagSelection.data
+    #     return redirect(url_for("quiz", selected_tag_ids=selected_tag_ids))
     return render_template("QuizSetup.html", tags=tags, form=form)
 
 

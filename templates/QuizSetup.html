@@ -1,10 +1,17 @@
 {% extends "base.html" %} {% block content %}
 <h1>Quiz</h1>
 
-<h3>Select Question Types</h3>
+
 <form method="post">
+    <h3>Select Question Types</h3>
     {{ form.hidden_tag() }}
+    <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
+    {{ form.questionTypes }}
+    </div>
+    <h3>Select Tags</h3>
+    <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
     {{ form.tagSelection }}
+    </div>
     {{ form.submit }}
 </form>
 

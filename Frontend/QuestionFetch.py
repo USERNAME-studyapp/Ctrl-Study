@@ -9,7 +9,7 @@ import supabase_client
 
 questionIDs = supabase_client.FetchAllQuestions()
 
-def getRandomQuestion() -> QuestionForm:
+def getRandomQuestion(tags: list[str] | None = None) -> QuestionForm:
     def getDbQuestion() -> dict[str, str]:
         questionID = random.choice(questionIDs)
         c = supabase_client.FetchQuestionById(questionID["id"])
