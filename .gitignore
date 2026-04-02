@@ -5,3 +5,5 @@ venv/
 .env
 goal.txt
 test.txt
+
+.DS_Store
