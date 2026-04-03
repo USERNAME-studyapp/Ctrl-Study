@@ -6,12 +6,20 @@ body {
     background-color: Canvas;
     color: CanvasText;
     font-family: sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 fieldset {
     border: none;
     margin: 0;
     padding: 0;
+}
+
+.headerContainer {
+    position: sticky;
+    top: 0;
+    backdrop-filter: blur(10px);
 }
 
 button,

@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import CppLexer
-from wtforms import Field, RadioField, SubmitField, SelectMultipleField, TextAreaField, widgets
+from wtforms import Field, RadioField, SubmitField, SelectMultipleField, TextAreaField, FieldList, FormField, widgets
 from wtforms.validators import DataRequired
 from typing import TypeVar, Generic
 
@@ -19,9 +19,6 @@ class SetupQuizForm(FlaskForm):
         super(SetupQuizForm, self).__init__(*args, **kwargs)
         self.questionTypes.choices = [(t, t) for t in types]
         self.tagSelection.choices = [(id, name) for (id,name) in tags]
-
-
-
 
 # QUESTION TYPES
 
@@ -40,6 +37,11 @@ class QuestionForm(FlaskForm, Generic[T]):
         formatter = HtmlFormatter(style="monokai", noclasses=True)
         highlighted = highlight(self.question, CppLexer(), formatter)
         return highlighted
+
+
+class RussianNestingForm(FlaskForm):
+    forms = FieldList(FormField(QuestionForm), min_entries=1)
+
 
 class RadioQuestionForm(QuestionForm[RadioField]):
     prompt: str

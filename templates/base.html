@@ -14,13 +14,17 @@
         {% endblock %}
     </head>
     <body>
-        <div style="margin-bottom: 15px;">
-            <strong>Ctrl Study</strong> |
-            <a href="/" class="btn">Home</a>
+        <div class="headerContainer">
+            <div style="margin-bottom: 15px; top:0; margin: 8px;">
+                <strong>Ctrl Study</strong> |
+                <a href="/" class="btn">Home</a>
+            </div>
+            <hr />
         </div>
-        <hr />
 
+        <div style="margin: 8px;">
         {% block body %}
         {% endblock %}
+        </div>
     </body>
 </html>

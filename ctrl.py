@@ -13,7 +13,7 @@ from __future__ import annotations
 from flask import Flask, render_template, session                               # Flask imports provide routing, form access, session state, and redirects
 
 from Frontend import QuestionFetch
-from Frontend.forms import RadioQuestionForm, SetupQuizForm, QuestionForm
+from Frontend.forms import RadioQuestionForm, SetupQuizForm, QuestionForm, RussianNestingForm
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -96,18 +96,24 @@ def question():
 
 @app.route("/quizQuestions", methods=["GET", "POST"])
 def quizQuestions():
-    quizQuestionTags: list[str] = session.get("quizQuestionTags", None)
-    quizQuestionTypes: list[str] = session.get("quizQuestionTypes", None)
-    print(f"Fetching quiz questions with tags: {quizQuestionTags} and types: {quizQuestionTypes}")
-    with ThreadPoolExecutor() as executor:
-        questions = list(executor.map(lambda _: QuestionFetch.getRandomQuestion(tags=quizQuestionTags, types=quizQuestionTypes), range(10)))
-    # session["questions"] = questions
+    if "questions" in session:
+        questions = session.get("questions", None)
+    else:
+        quizQuestionTags: list[str] = session.get("quizQuestionTags", None)
+        quizQuestionTypes: list[str] = session.get("quizQuestionTypes", None)
+        with ThreadPoolExecutor() as executor:
+            questions = list(executor.map(lambda _: QuestionFetch.getRandomQuestion(tags=quizQuestionTags, types=quizQuestionTypes), range(10)))
+        session["questions"] = questions
 
     questions = [q for q in questions if q is not None]
     forms = [QuestionFetch.getQuestionForm(q) for q in list(set(questions))]
+    r = RussianNestingForm()
+    for form in forms:
+        r.forms.append_entry(form)
     session.pop("quizQuestionTags", None)
     session.pop("quizQuestionTypes", None)
-    return render_template("quizQuestions.html", questions=forms)
+
+    return render_template("quizQuestions.html", questions=forms, bigThing=r)
 
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
