@@ -24,6 +24,12 @@ from flask import redirect, url_for
 import supabase_client
 import template_builder
 
+import shutil
+cache_path = "./flask_session_cache"
+try:
+    shutil.rmtree(cache_path)
+except FileNotFoundError:
+    pass
 
 # app is the Flask application instance
 app = Flask(__name__)
@@ -36,6 +42,8 @@ app.config["SESSION_TYPE"] = "filesystem"  # Store session data in files
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=6)
 
 Session(app)
+
+
 
 
 # proper home page
