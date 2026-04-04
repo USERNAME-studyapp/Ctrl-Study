@@ -108,7 +108,7 @@ def quizQuestions():
     session.pop("quizQuestionTags", None)
     session.pop("quizQuestionTypes", None)
 
-    return render_template("quizQuestions.html", questions=forms, bigThing=r)
+    return render_template("quizQuestions.html", questions=forms)
 
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
