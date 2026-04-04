@@ -1,39 +1,41 @@
 {% extends "base.html" %} {% block body %}
-<h1>Quiz</h1>
+<div style="padding-left: 10px">
+    <h1>Quiz</h1>
 
 
-<form method="post">
-    <h3>Select Question Types</h3>
-    {{ form.hidden_tag() }}
-    <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
-    {{ form.questionTypes(style="list-style:none") }}
-    </div>
-    <button type="button" id="select-all-questionTypes">Toggle All Question Types</button>
-    <h3>Select Tags</h3>
-    <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
-    {{ form.tagSelection(style="list-style:none") }}
-    </div>
-    <button type="button" id="select-all-tags">Toggle All Tags</button>
-    <br>
-    <hr>
-    {{ form.submit }}
-</form>
+    <form method="post">
+        <h3>Select Question Types</h3>
+        {{ form.hidden_tag() }}
+        <div class="bordering">
+            {{ form.questionTypes(style="list-style:none") }}
+        </div>
+        <button type="button" id="select-all-questionTypes">Toggle All Question Types</button>
+        <h3>Select Tags</h3>
+        <div class="bordering">
+            {{ form.tagSelection(style="list-style:none") }}
+        </div>
+        <button type="button" id="select-all-tags">Toggle All Tags</button>
+        <br>
+        <hr>
+        {{ form.submit }}
+    </form>
 
-<script>
-    document.getElementById('select-all-questionTypes').addEventListener('click', function(event) {
-      const checkboxes = document.querySelectorAll('input[name="questionTypes"]');
-      var toggle = (checkboxes[0].checked == true) ? false : true;
-      checkboxes.forEach(checkbox => {
-          checkbox.checked = toggle;
-      });
-    });
-    document.getElementById('select-all-tags').addEventListener('click', function(event) {
-        const checkboxes = document.querySelectorAll('input[name="tagSelection"]');
-        var toggle = (checkboxes[0].checked == true) ? false : true;
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = toggle;
+    <script>
+        document.getElementById('select-all-questionTypes').addEventListener('click', function (event) {
+            const checkboxes = document.querySelectorAll('input[name="questionTypes"]');
+            var toggle = (checkboxes[0].checked == true) ? false : true;
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = toggle;
+            });
         });
-    });
-</script>
+        document.getElementById('select-all-tags').addEventListener('click', function (event) {
+            const checkboxes = document.querySelectorAll('input[name="tagSelection"]');
+            var toggle = (checkboxes[0].checked == true) ? false : true;
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = toggle;
+            });
+        });
+    </script>
+</div>
 
 {% endblock %}

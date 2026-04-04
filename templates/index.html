@@ -1,11 +1,16 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block body %}
-    <h1>Welcome to Ctrl+Study</h1>
+<div class="bg"></div>
+<div class="bg bg2"></div>
+<div class="bg bg3"></div>
+<div class="v-aligning">
+  <h1 style="text-align: center; font-size: 65px;">Welcome to Ctrl+Study</h1>
 
-    <div style="margin-top: 20px;">
-        <a href="/template" class="btn">Template Builder</a><br>
-        <a href="/question" class="btn">Question Page</a><br>
-        <a href="/quiz" class="btn">Start Quiz</a>
-    </div>
+  <div class="h-aligning" style="margin-top: 20px;">
+    <a href="/template" class="big-btn">Template Builder</a><br>
+    <a href="/question" class="big-btn">Question Page</a><br>
+    <a href="/quiz" class="big-btn">Start Quiz</a>
+  </div>
+</div>
 {% endblock %}
