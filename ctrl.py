@@ -13,11 +13,9 @@ from __future__ import annotations
 from flask import Flask, render_template, session                               # Flask imports provide routing, form access, session state, and redirects
 
 from Frontend import QuestionFetch
-from Frontend.forms import RadioQuestionForm, SetupQuizForm, QuestionForm, RussianNestingForm
+from Frontend.forms import SetupQuizForm
 
 from concurrent.futures import ThreadPoolExecutor
-
-from typing import cast
 from datetime import timedelta
 from flask_session import Session
 
@@ -107,9 +105,6 @@ def quizQuestions():
 
     questions = [q for q in questions if q is not None]
     forms = [QuestionFetch.getQuestionForm(q) for q in list(set(questions))]
-    r = RussianNestingForm()
-    for form in forms:
-        r.forms.append_entry(form)
     session.pop("quizQuestionTags", None)
     session.pop("quizQuestionTypes", None)
 

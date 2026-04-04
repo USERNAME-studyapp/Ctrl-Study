@@ -6,11 +6,11 @@
     <h3>Select Question Types</h3>
     {{ form.hidden_tag() }}
     <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
-    {{ form.questionTypes }}
+    {{ form.questionTypes(style="list-style:none") }}
     </div>
     <h3>Select Tags</h3>
     <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
-    {{ form.tagSelection }}
+    {{ form.tagSelection(style="list-style:none") }}
     </div>
     {{ form.submit }}
 </form>
