@@ -64,7 +64,7 @@ def getRandomQuestion(tags: list[str] | None = None, types: list[str] | None = N
         templateText=q["template"], promptText=q["prompt"], feedbackText=q["feedback"]
     )
 
-    if q["question_type"] != "true_false":
+    if q["type"] != "true_false":
         gq["answers"] = randomizeAnswers( [*gq["incorrect"], *gq["answer"]] )
     gq["type"] = q["type"]
     return QuestionContainer(
