@@ -1,15 +1,15 @@
 {% extends "base.html" %} {% block body %}
-{% if questions|length < 1 %}
-<h4>No questions available.</h4>
-{% else %}
-{% for question in questions %}
-<div>
-{{ question.hidden_tag() }}
-{{ question.prompt }}
-<div style="width: fit-content">{{ question.format_html()|safe }}</div>
-{{ question.answer(style="list-style:none") }}
-</div>
-<hr>
-{% endfor %}
-{% endif %}
-{% endblock %}
+{% if questions|length < 1 %} <h4>No questions available.</h4>
+    {% else %}
+    {% for question in questions %}
+    <div>
+        {{ question.hidden_tag() }}
+        {{ question.prompt }}
+        <div style="width: fit-content">{{ question.format_html()|safe }}</div>
+        {{ question.answer(style="list-style:none") }}
+    </div>
+    <hr>
+    {% endfor %}
+    {% endif %}
+    <button> Submit</button>
+    {% endblock %}
