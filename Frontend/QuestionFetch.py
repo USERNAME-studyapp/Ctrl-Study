@@ -52,7 +52,7 @@ def getRandomQuestion(tags: list[str] | None = None, types: list[str] | None = N
             raise ValueError("Question not found.")
         return {"type": c["question_type"], "template": c["prompt_template"], "prompt": c["question_template"], "feedback": c["feedback_template"]}
 
-    def randomizeAnswers(answers: list[tuple[str, str]]) -> Any:
+    def shuffleAnswers(answers: list[tuple[str, str]]) -> Any:
         opt = answers
         random.shuffle(opt)
         return cast(Any, opt)
@@ -65,7 +65,9 @@ def getRandomQuestion(tags: list[str] | None = None, types: list[str] | None = N
     )
 
     if q["type"] != "true_false":
-        gq["answers"] = randomizeAnswers( [*gq["incorrect"], *gq["answer"]] )
+        gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]])
+    else:
+        gq["answers"] = [*gq["incorrect"], *gq["answer"]]
     gq["type"] = q["type"]
     return QuestionContainer(
         prompt=gq["prompt"],
