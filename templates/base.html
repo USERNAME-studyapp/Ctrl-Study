@@ -1,30 +1,30 @@
 <!doctype html>
 <html>
-    <head>
-        {% if title %}
-        <title>{{ title }}</title>
-        {% else %}
-        <title>Ctrl Study</title>
-        {% endif %}
-        <link
-            rel="stylesheet"
-            href="{{ url_for('static', filename='css/style.css') }}"
-        />
-        {% block head %}
-        {% endblock %}
-    </head>
-    <body>
-        <div class="headerContainer">
-            <div style="margin-bottom: 15px; top:0; margin: 8px;">
-                <strong>Ctrl Study</strong> |
-                <a href="/" class="btn">Home</a>
-            </div>
-            <hr />
-        </div>
 
-        <div style="margin: 8px;">
+<head>
+    {% if title %}
+    <title>{{ title }}</title>
+    {% else %}
+    <title>Ctrl Study</title>
+    {% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    {% block head %}
+    {% endblock %}
+</head>
+
+<body>
+    <div class="headerContainer">
+        <div style="margin-bottom: 15px; top:0; margin: 8px;">
+            <strong>Ctrl Study</strong> |
+            <a href="/" class="btn">Home</a>
+        </div>
+        <hr />
+    </div>
+
+    <div style="margin: 8px;">
         {% block body %}
         {% endblock %}
-        </div>
-    </body>
+    </div>
+</body>
+
 </html>

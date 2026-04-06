@@ -1,23 +1,31 @@
 {% extends "base.html" %} {% block body %}
 <div style="padding-left: 10px">
-    <h1>Quiz</h1>
-
-
-    <form method="post">
-        <h3>Select Question Types</h3>
-        {{ form.hidden_tag() }}
-        <div class="bordering">
-            {{ form.questionTypes(style="list-style:none") }}
-        </div>
-        <button type="button" id="select-all-questionTypes">Toggle All Question Types</button>
-        <h3>Select Tags</h3>
-        <div class="bordering">
-            {{ form.tagSelection(style="list-style:none") }}
-        </div>
-        <button type="button" id="select-all-tags">Toggle All Tags</button>
-        <br>
-        <hr>
+    <div style="margin: 15px">
+        <h1 style="text-align: center; font-size: 50px;font-family: monospace; margin-bottom: 10px;">Quiz</h1>
+        <form method="post">
+            {{ form.hidden_tag() }}
+            <div class="container h-aligning">
+                <div class="column">
+                    <h3 style="font-size: 23px;">Select Question Types</h3>
+                    <div class=" bordering" style="margin-top:25px; margin-bottom: 40px;">
+                        {{ form.questionTypes(style="list-style:none") }}
+                    </div>
+                    <button type="button" id="select-all-questionTypes">Toggle All Question Types</button>
+                </div>
+                <div class="column">
+                    <h3 style="font-size: 23px;">Select Tags</h3>
+                    <div class="bordering">
+                        {{ form.tagSelection(style="list-style:none") }}
+                    </div>
+                    <button type="button" id="select-all-tags">Toggle All Tags</button>
+                </div>
+            </div>
+    </div>
+    <br>
+    <hr>
+    <div style="text-align: center; margin: 20px;">
         {{ form.submit }}
+    </div>
     </form>
 
     <script>
