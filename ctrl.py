@@ -122,6 +122,12 @@ def quiz():
     types = ["multiple_choice", "multiple_select", "short_answer", "true_false"]
     ts = [(tag["id"], tag["name"]) for tag in tags]
     form = SetupQuizForm(types=types, tags=ts)
+    if "questions" in session:
+        session.pop("questions")
+    if "quizQuestionTags" in session:
+        session.pop("quizQuestionTags")
+    if "quizQuestionTypes" in session:
+        session.pop("quizQuestionTypes")
     if form.validate_on_submit():
         print(form.tagSelection.data, form.questionTypes.data)
         t = form.tagSelection.data
