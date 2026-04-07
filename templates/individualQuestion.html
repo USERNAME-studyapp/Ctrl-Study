@@ -4,7 +4,7 @@
 
 <!--<pre><code style="tab-size: 4;">{{ form.question }}</code></pre>-->
 <div style="width: fit-content">{{ form.format_html()|safe }}</div>
-<form action="" method="post" novalidate>
+<form style="tab-size: 4" action="" method="post" novalidate>
     {{ form.hidden_tag() }}
     {{ form.answer }}
     <h3>{{ status }}</h3>
