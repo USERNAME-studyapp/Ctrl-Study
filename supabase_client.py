@@ -39,7 +39,7 @@ def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
     response = (
         ctrlDB.table("questions")
         # TEMP: DB columns are swapped. TODO: swap back to prompt_template, question_template once fixed.
-        .select("id,title,question_template,prompt_template,feedback_template,question_type")
+        .select("id,title,question_template,prompt_template,feedback_template,question_type,language")
         .eq("id", questionId)
         .execute()
     )
@@ -60,6 +60,7 @@ def SaveQuestion(
     answerTemplate: str,
     feedbackTemplate: str,
     questionType: str,
+    language: str,
     tagIds: list[int],
 ) -> dict[str, Any] | None:
     if not url or not key:
@@ -73,6 +74,7 @@ def SaveQuestion(
         "prompt_template": answerTemplate,
         "feedback_template": feedbackTemplate,
         "question_type": questionType,
+        "language": language,
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -100,6 +102,7 @@ def UpdateQuestion(
     answerTemplate: str,
     feedbackTemplate: str,
     questionType: str,
+    language: str,
     tagIds: list[int],
 ) -> dict[str, Any] | None:
     if not url or not key:
@@ -113,6 +116,7 @@ def UpdateQuestion(
         "prompt_template": answerTemplate,
         "feedback_template": feedbackTemplate,
         "question_type": questionType,
+        "language": language,
     }
 
     response = ctrlDB.table("questions").update(payload).eq("id", questionId).execute()

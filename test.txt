@@ -92,19 +92,3 @@ Tags:
 
 question to transform:
 
-Read the following code:
-std::string name_one = "BROCK";
-std::string name_two = "BRANDON";
-
-if (name_one > name_two) {
-std::cout << "BROCK is greater than BRANDON\n";
-} else {
-std::cout << "BRANDON is greater than BROCK\n";
-}
-
-What would the output be?
-
-BROCK is greater than BRANDON
-BRANDON is greater than BROCK
-Nothing, you cannot use the > (greater than) operator with std::string types.
-Nothing, program crashes.

@@ -89,6 +89,7 @@ def defaultState() -> dict[str, Any]:
         "feedbackText": "",
         "questionName": "",
         "questionType": "multiple_choice",
+        "language": "C++",
         "selectedTagIds": [],
         "selectedQuestionId": "",
         "previewOutput": "",
@@ -105,6 +106,7 @@ def applyRestoredState(state: dict[str, Any], restoredState: Any) -> None:
     state["feedbackText"] = str(restoredState.get("feedbackText", state["feedbackText"]))
     state["questionName"] = str(restoredState.get("questionName", state["questionName"]))
     state["questionType"] = str(restoredState.get("questionType", state["questionType"]))
+    state["language"] = str(restoredState.get("language", state["language"]))
     restoredTagIds = restoredState.get("selectedTagIds", state["selectedTagIds"])
     if isinstance(restoredTagIds, list):
         state["selectedTagIds"] = [int(tagId) for tagId in restoredTagIds]
@@ -121,6 +123,7 @@ def readFormIntoState(state: dict[str, Any]) -> tuple[str, str, int | None]:
     state["feedbackText"] = request.form.get("feedback_text", "")
     state["questionName"] = request.form.get("question_name", "")
     state["questionType"] = request.form.get("question_type", state["questionType"])
+    state["language"] = request.form.get("language", state["language"])
     action = request.form.get("action", "preview")
     rawTagIds = request.form.getlist("tag_ids")
     state["selectedTagIds"] = [int(tagId) for tagId in rawTagIds if tagId.isdigit()]
@@ -150,6 +153,7 @@ def handleLoad(state: dict[str, Any], chosenQuestionId: str) -> None:
             state["promptText"] = str(selected.get("question_template", ""))
             state["feedbackText"] = str(selected.get("feedback_template", ""))
             state["questionType"] = str(selected.get("question_type", state["questionType"]))
+            state["language"] = str(selected.get("language", state["language"]))
             state["selectedTagIds"] = FetchTagIdsForQuestion(chosenIdValue)
             state["previewOutput"] = ""
             state["statusMessage"] = "Loaded saved question."
@@ -195,6 +199,7 @@ def handleGenerate(action: str, state: dict[str, Any], selectedQuestionIdValue: 
                         state["templateText"],
                         state["feedbackText"],
                         state["questionType"],
+                        state["language"],
                         state["selectedTagIds"],
                     )
                     if created:
@@ -208,6 +213,7 @@ def handleGenerate(action: str, state: dict[str, Any], selectedQuestionIdValue: 
                         state["templateText"],
                         state["feedbackText"],
                         state["questionType"],
+                        state["language"],
                         state["selectedTagIds"],
                     )
                     state["statusMessage"] = "Updated saved question."
@@ -266,6 +272,7 @@ def templateIndex():
         feedback_text=state["feedbackText"],
         question_name=state["questionName"],
         question_type=state["questionType"],
+        language=state["language"],
         selected_question_id=state["selectedQuestionId"],
         saved_questions=savedQuestions,
         selected_tag_ids=state["selectedTagIds"],

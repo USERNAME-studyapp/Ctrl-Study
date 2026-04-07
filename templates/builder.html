@@ -55,14 +55,23 @@
               </div>
             </div>
 
-            <div>
-              <label for="question_type">Question Type</label><br />
-              <select id="question_type" name="question_type" style="width: 200px;">
-                <option value="multiple_choice" {% if question_type == "multiple_choice" %}selected{% endif %}>Multiple Choice</option>
-                <option value="multiple_select" {% if question_type == "multiple_select" %}selected{% endif %}>Multiple Select</option>
-                <option value="short_answer" {% if question_type == "short_answer" %}selected{% endif %}>Short Answer</option>
-                <option value="true_false" {% if question_type == "true_false" %}selected{% endif %}>True False</option>
-              </select>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div>
+                <label for="question_type">Question Type</label><br />
+                <select id="question_type" name="question_type" style="width: 200px;">
+                  <option value="multiple_choice" {% if question_type == "multiple_choice" %}selected{% endif %}>Multiple Choice</option>
+                  <option value="multiple_select" {% if question_type == "multiple_select" %}selected{% endif %}>Multiple Select</option>
+                  <option value="short_answer" {% if question_type == "short_answer" %}selected{% endif %}>Short Answer</option>
+                  <option value="true_false" {% if question_type == "true_false" %}selected{% endif %}>True False</option>
+                </select>
+              </div>
+              <div>
+                <label for="language">Language</label><br />
+                <select id="language" name="language" style="width: 200px;">
+                  <option value="C++" {% if language == "C++" %}selected{% endif %}>C++</option>
+                  <option value="Python" {% if language == "Python" %}selected{% endif %}>Python</option>
+                </select>
+              </div>
             </div>
           </div><br /><br />
 
