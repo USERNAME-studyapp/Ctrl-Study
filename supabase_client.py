@@ -163,9 +163,26 @@ def FetchFilteredQuestions(tags: list[str], questionTypes: list[str]) -> list[in
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
     
-    # lol, tl note: I want the ID of questions that have a question_type in the questionTypes list AND have at least one tag in the tags list
-    response = ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_type", questionTypes).in_("question_tags.tags.name", tags).execute()
-    fetchError = getattr(response, "error", None)
+    if tags and questionTypes:
+        # tl note: I want the ID of questions that have a question_type in the questionTypes list AND have at least one tag in the tags list
+        response = ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_type", questionTypes).in_("question_tags.tags.name", tags).execute()
+        fetchError = getattr(response, "error", None)
+    
+    elif not questionTypes and tags:
+        # If only tags provided, fetch question IDs that have at least one tag in the tags list
+        response = ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_tags.tags.name", tags).execute()
+        fetchError = getattr(response, "error", None)
+
+    elif not tags and questionTypes:
+        # If only question types provided, fetch question IDs that have a question_type in the questionTypes list
+        response = ctrlDB.table("questions").select("id").in_("question_type", questionTypes).execute()
+        fetchError = getattr(response, "error", None)
+
+    else:
+        # If no filters provided, fetch all question IDs
+        response = ctrlDB.table("questions").select("id").execute()
+        fetchError = getattr(response, "error", None)
+
     if fetchError:
         raise RuntimeError(f"Supabase fetch failed: {fetchError}")
     

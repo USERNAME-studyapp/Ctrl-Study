@@ -36,17 +36,13 @@ class QuestionContainer:
 
 def getRandomQuestion(tags: list[str] | None = None, types: list[str] | None = None, generateNew: bool = False) -> QuestionContainer | None:
     def getDbQuestion() -> dict[str, str] | None:
-        if (tags != [] and tags is not None) and (types != [] and types is not None):
-            print(f"Fetching question with tags: {tags} and types: {types}")
-            options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types)
-            print(options)
-            if not options:
-                return None
-            questionID = random.choice(options)
-            c = supabase_client.FetchQuestionById(questionID)
-        else:
-            questionID = random.choice(questionIDs)
-            c = supabase_client.FetchQuestionById(questionID["id"])
+        print(f"Fetching question with tags: {tags} and types: {types}")
+        options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types)
+        print(options)
+        if not options:
+            return None
+        questionID = random.choice(options)
+        c = supabase_client.FetchQuestionById(questionID)
 
         if c is None:
             raise ValueError("Question not found.")
