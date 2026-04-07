@@ -44,8 +44,6 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=6)
 Session(app)
 
 
-
-
 # proper home page
 @app.route("/", methods=["GET"])
 @app.route("/index", methods=["GET"])
@@ -134,9 +132,6 @@ def quiz():
         session["quizQuestionTypes"] = form.questionTypes.data
         return redirect(url_for("quizQuestions"))
     return render_template("QuizSetup.html", tags=tags, form=form)
-
-
-
 
 # Starts local development server when run directly
 if __name__ == "__main__":
