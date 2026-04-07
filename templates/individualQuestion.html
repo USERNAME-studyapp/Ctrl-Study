@@ -4,9 +4,9 @@
 
 <!--<pre><code style="tab-size: 4;">{{ form.question }}</code></pre>-->
 <div style="width: fit-content">{{ form.format_html()|safe }}</div>
-<form action="" method="post" novalidate>
+<form style="tab-size: 4" action="" method="post" novalidate>
     {{ form.hidden_tag() }}
-    {{ form.answer }}
+    {{ form.answer(style="list-style:none") }}
     <h3>{{ status }}</h3>
     {% if status != 'Please answer the question.' %}
     <p>{{ form.feedback }}</p>
