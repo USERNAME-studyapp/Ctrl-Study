@@ -72,8 +72,8 @@ fieldset {
 
 /* BORDERS */
 
-.bordering {
-    border: 3px solid #6a6a6a;
+.clear_bordering_fixed {
+    border: 1px solid #6a6a6a;
     font-size: 17px;
     padding-top: 3px;
     padding-bottom: 3px;
@@ -84,7 +84,7 @@ fieldset {
     overflow-y: auto;
     margin-bottom: 12px;
 
-    background-color: rgba(92, 92, 92, 0.9);
+    /* background-color: rgba(92, 92, 92, 0.9); */
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     box-sizing: border-box;
     border-radius: 25px;
@@ -100,6 +100,22 @@ fieldset {
     overflow: auto;
     word-wrap: break-word;
 
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    box-sizing: border-box;
+    border-radius: 25px;
+}
+
+.slight_clear_bordering {
+    border: 1px solid #6a6a6a;
+    font-size: 17px;
+    padding: 3px 25px 20px 25px;
+    margin: 5px auto 12px auto;
+    max-width: 98%;
+    max-height: 80%;
+    overflow: auto;
+    word-wrap: break-word;
+
+    background-color: rgba(61, 61, 61, 0.9);
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     box-sizing: border-box;
     border-radius: 25px;
