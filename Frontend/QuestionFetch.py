@@ -36,10 +36,10 @@ class QuestionContainer:
             self.type)
         )
 
-def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = []) -> list[QuestionContainer] | None:
+def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = [], languages: list[str] = []) -> list[QuestionContainer] | None:
     def getDbQuestions() -> list[dict[str, str]] | None:
         print(f"Fetching question with tags: {tags} and types: {types}")
-        options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types)
+        options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types, languages=languages)
         print(f"Got question ids: {options}")
         if not options:
             return None
