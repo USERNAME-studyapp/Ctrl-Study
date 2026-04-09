@@ -95,11 +95,11 @@ def question():
                     status = "Incorrect"
                     print("incorrect")
                 return render_template(
-                    "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=True
+                    "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=True, currentQuestion=session["progress"] + 1, totalQuestions=len(session["quizQuestions"])
                 )
 
     return render_template(
-        "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=False
+        "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=False, currentQuestion=session["progress"] + 1, totalQuestions=len(session["quizQuestions"])
     )
 
 @app.route("/quiz", methods=["GET", "POST"])
