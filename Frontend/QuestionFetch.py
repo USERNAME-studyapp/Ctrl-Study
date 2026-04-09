@@ -60,10 +60,7 @@ def getRandomQuestion(tags: list[str] = [], types: list[str] = [], generateNew: 
         templateText=q["template"], promptText=q["prompt"], feedbackText=q["feedback"]
     )
 
-    if q["type"] != "true_false":
-        gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]])
-    else:
-        gq["answers"] = [*gq["incorrect"], *gq["answer"]]
+    gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]])
     gq["type"] = q["type"]
     return QuestionContainer(
         prompt=gq["prompt"],
