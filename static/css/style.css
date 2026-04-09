@@ -1,3 +1,8 @@
+/* this is the page change fade animation if you wanna remove it */
+@view-transition {
+  navigation: auto;
+}
+
 :root {
     color-scheme: light dark;
 }
