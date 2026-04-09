@@ -89,10 +89,8 @@ def question():
                 session.modified = True
 
                 correct = form.correct
-                if not isinstance(correct, (list, tuple, set)):
-                    correct = [correct]
 
-                status = "Correct" if form.answer.data in correct else "Incorrect"
+                status = "Correct" if all(answer in correct for answer in form.answer.data) else "Incorrect"
 
                 return render_template(
                     "individualQuestion.html",
@@ -113,6 +111,8 @@ def question():
         currentQuestion=session["progress"] + 1,
         totalQuestions=len(session["quizQuestions"]),
     )
+
+
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
     tags = supabase_client.FetchAllTags()

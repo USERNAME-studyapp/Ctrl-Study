@@ -20,6 +20,13 @@
                     <button type="button" id="select-all-tags">Toggle All Tags</button>
                 </div>
                 <div class="column">
+                    <h3 style="font-size: 23px;">Select Languages</h3>
+                    <div class="bordering">
+                        {{ form.languageSelection(style="list-style:none") }}
+                    </div>
+                    <button type="button" id="select-all-languages">Toggle All Languages</button>
+                </div>
+                <div class="column">
                     <h3 style="font-size: 23px;">Question Count</h3>
                     {{ form.questionCount }}
                 </div>
@@ -43,6 +50,13 @@
         });
         document.getElementById('select-all-tags').addEventListener('click', function (event) {
             const checkboxes = document.querySelectorAll('input[name="tagSelection"]');
+            var toggle = (checkboxes[0].checked == true) ? false : true;
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = toggle;
+            });
+        });
+        document.getElementById('select-all-languages').addEventListener('click', function (event) {
+            const checkboxes = document.querySelectorAll('input[name="languageSelection"]');
             var toggle = (checkboxes[0].checked == true) ? false : true;
             checkboxes.forEach(checkbox => {
                 checkbox.checked = toggle;
