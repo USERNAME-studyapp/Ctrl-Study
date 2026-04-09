@@ -8,9 +8,9 @@
 <form style="tab-size: 4" action="" method="post" novalidate>
     {{ form.hidden_tag() }}
     <fieldset {{ "disabled" if showingAnswer }}>
-    {{ form.answer(style="list-style:none") }}
+        {{ form.answer(style="list-style:none") }}
     </fieldset>
-    <h3 style="color: {{ "green" if status == "Correct" else "red" if status == "Incorrect" }}">{{ status }}</h3>
+    <h3 style="color: {{ " green" if status=="Correct" else "red" if status=="Incorrect" }}">{{ status }}</h3>
     {% if showingAnswer %}
     {% if status == "Incorrect" %}
     <p><i>The correct answer was:</i></p>
@@ -23,14 +23,15 @@
     <p>{{ form.feedback }}</p>
     {% endif %}
     {% if showingAnswer %}
-        <button type="submit" name="action" value="next">Next</button>
+    <button type="submit" name="action" value="next">Next</button>
     {% else %}
-        <button type="submit" name="action" value="submit">Submit</button>
+    <button type="submit" name="action" value="submit">Submit</button>
     {% endif %}
 </form>
 
 <hr>
 <p>{{ currentQuestion }} / {{ totalQuestions }}</p>
-<progress id="progress" value="{{ currentQuestion }}" max="{{ totalQuestions }}"/>
+<progress id="progress" value="{{ currentQuestion }}" max="{{ totalQuestions }}" />
+
 
 {% endblock %}

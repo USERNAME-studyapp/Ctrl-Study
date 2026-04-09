@@ -54,6 +54,8 @@ body {
     }
 }
 
+/* --------- */
+
 fieldset {
     border: none;
     margin: 0;
@@ -88,6 +90,21 @@ fieldset {
     border-radius: 25px;
 }
 
+.clear_bordering {
+    border: 1px solid #6a6a6a;
+    font-size: 17px;
+    padding: 3px 25px 20px 25px;
+    margin: 50px auto 12px auto;
+    max-width: 70%;
+    max-height: 80%;
+    overflow: auto;
+    word-wrap: break-word;
+
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    box-sizing: border-box;
+    border-radius: 25px;
+}
+
 /* BUTTONS */
 
 button,
@@ -105,9 +122,21 @@ button,
     color: white;
 }
 
-button:hover,
-.btn:hover {
-    background-color: #7b8f95;
+.clear_btn {
+    border: 1px solid #6a6a6a;
+    font-size: 17px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-right: 25px;
+    padding-left: 25px;
+    width: fit-content;
+    max-height: fit-content;
+    overflow-y: auto;
+    margin-bottom: 12px;
+
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    box-sizing: border-box;
+    border-radius: 25px;
 }
 
 .big-btn {
@@ -122,6 +151,13 @@ button:hover,
 
     background-color: #627277;
     color: white;
+}
+
+button:hover,
+.btn:hover,
+.clear_btn:hover,
+.big-btn:hover {
+    background-color: #7b8f95;
 }
 
 /* ALIGNING */
