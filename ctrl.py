@@ -118,10 +118,11 @@ def quiz():
         print(form.tagSelection.data, form.questionTypes.data)
         t = form.tagSelection.data
         types = form.questionTypes.data
+        count = form.questionCount.data
         print(t)
-        if t is not None and types is not None:
+        if t is not None and types is not None and count is not None:
             tag = [ts[int(id)-1][1] for id in t]
-            session["quizQuestions"] = QuestionFetch.getRandomQuestions(count=10, tags=tag, types=types)
+            session["quizQuestions"] = QuestionFetch.getRandomQuestions(count=count, tags=tag, types=types)
         return redirect(url_for("question"))
     return render_template("QuizSetup.html", tags=tags, form=form)
 
