@@ -14,14 +14,16 @@ class MultiCheckboxField(SelectMultipleField):
 class SetupQuizForm(FlaskForm):
     questionTypes = MultiCheckboxField("Question Types")
     tagSelection = MultiCheckboxField("Tag Selection")
+    languageSelection = MultiCheckboxField("Programming Language")
     questionCount = IntegerField("Question Count", validators=[DataRequired(), validators.number_range(min=1)], default=10)
 
     submit = SubmitField("Submit")
 
-    def __init__(self, types: list[str], tags: list[tuple[str, str]], *args, **kwargs):
+    def __init__(self, types: list[str], tags: list[tuple[str, str]], languages: list[str], *args, **kwargs):
         super(SetupQuizForm, self).__init__(*args, **kwargs)
         self.questionTypes.choices = [(t, t) for t in types]
         self.tagSelection.choices = [(id, name) for (id,name) in tags]
+        self.languageSelection.choices = [(l, l) for l in languages]
 
 # QUESTION TYPES
 
@@ -34,6 +36,7 @@ class QuestionForm(FlaskForm, Generic[T]):
     question: str
     correct: list[str]
     feedback: str
+    language: str
     answer: T
 
     def format_html(self) -> str:
@@ -60,6 +63,7 @@ class RadioQuestionForm(QuestionForm[RadioField]):
         question: str,
         correct: list[str],
         feedback: str,
+        language: str,
         answerChoices: list[str],
         *args,
         **kwargs,
@@ -69,6 +73,7 @@ class RadioQuestionForm(QuestionForm[RadioField]):
         self.question = question
         self.correct = correct
         self.feedback = feedback
+        self.language = language
         self.answer.choices = [(item, item) for item in answerChoices]
 
 class CheckboxQuestionForm(QuestionForm[MultiCheckboxField]):
@@ -85,6 +90,7 @@ class CheckboxQuestionForm(QuestionForm[MultiCheckboxField]):
         question: str,
         correct: list[str],
         feedback: str,
+        language: str,
         answerChoices: list[str],
         *args,
         **kwargs,
@@ -94,6 +100,7 @@ class CheckboxQuestionForm(QuestionForm[MultiCheckboxField]):
         self.question = question
         self.correct = correct
         self.feedback = feedback
+        self.language = language
         self.answer.choices = [(item, item) for item in answerChoices]
 
 class ShortAnswerQuestionForm(QuestionForm[TextAreaField]):
@@ -109,6 +116,7 @@ class ShortAnswerQuestionForm(QuestionForm[TextAreaField]):
         prompt: str,
         question: str,
         correct: list[str],
+        language: str,
         feedback: str,
         *args,
         **kwargs,
@@ -118,3 +126,4 @@ class ShortAnswerQuestionForm(QuestionForm[TextAreaField]):
         self.question = question
         self.correct = correct
         self.feedback = feedback
+        self.language = language

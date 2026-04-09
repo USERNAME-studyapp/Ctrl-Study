@@ -1,6 +1,7 @@
 {% extends "base.html" %} {% block body %}
 
 <h1>Question</h1>
+<h3>{{ form.language }}</h3>
 <p><b>{{ form.prompt }}</b></p>
 
 <div style="width: fit-content">{{ form.format_html()|safe }}</div>

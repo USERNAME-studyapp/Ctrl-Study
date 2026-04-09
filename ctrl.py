@@ -117,8 +117,9 @@ def question():
 def quiz():
     tags = supabase_client.FetchAllTags()
     types = ["multiple_choice", "multiple_select", "short_answer", "true_false"]
+    languages = ["Python", "C++"]
     ts = [(tag["id"], tag["name"]) for tag in tags]
-    form = SetupQuizForm(types=types, tags=ts)
+    form = SetupQuizForm(types=types, tags=ts, languages=languages)
     if "quizQuestions" in session:
         session.pop("quizQuestions")
     if "quizQuestionTags" in session:

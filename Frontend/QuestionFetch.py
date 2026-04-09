@@ -17,14 +17,16 @@ class QuestionContainer:
     feedback: str
     answer: list[str]
     type: str
+    language: str
 
-    def __init__(self, prompt: str, question: str, correct: list[str], feedback: str, answer: list[str], type: str):
+    def __init__(self, prompt: str, question: str, correct: list[str], feedback: str, answer: list[str], type: str, language: str):
         self.prompt = prompt
         self.question = question
         self.correct = correct
         self.feedback = feedback
         self.answer = answer
         self.type = type
+        self.language = language
 
     def __hash__(self):
         return hash(
@@ -49,7 +51,7 @@ def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = 
             c = supabase_client.FetchQuestionById(questionID)
             if c is None:
                 raise ValueError("Question not found.")
-            questions.append({"type": c["question_type"], "template": c["prompt_template"], "prompt": c["question_template"], "feedback": c["feedback_template"]})
+            questions.append({"type": c["question_type"], "template": c["prompt_template"], "prompt": c["question_template"], "feedback": c["feedback_template"], "language": c["language"]})
 
 
         return questions
@@ -78,6 +80,7 @@ def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = 
             feedback=gq["feedback"],
             answer=gq["answers"],
             type=gq["type"],
+            language=qu["language"]
         ))
 
     return questions
@@ -92,6 +95,7 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 correct=question.correct,
                 feedback=question.feedback,
                 answerChoices=question.answer,
+                language=question.language
             )
         case "multiple_select":
             form = CheckboxQuestionForm(
@@ -100,6 +104,7 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 correct=question.correct,
                 feedback=question.feedback,
                 answerChoices=question.answer,
+                language=question.language
             )
         case "true_false":
             form = RadioQuestionForm(
@@ -108,6 +113,7 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 correct=question.correct,
                 feedback=question.feedback,
                 answerChoices=question.answer,
+                language=question.language
             )
         case "short_answer":
             form = ShortAnswerQuestionForm(
@@ -115,6 +121,7 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 question=question.question,
                 correct=question.correct,
                 feedback=question.feedback,
+                language=question.language
             )
         case _:
             raise ValueError("Unknown question type.")
