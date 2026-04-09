@@ -1,5 +1,6 @@
 from supabase import create_client, Client
 import os
+import time
 import random
 from datetime import datetime, timezone
 from dotenv import load_dotenv
@@ -14,13 +15,32 @@ key = os.getenv("SUPABASE_KEY")
 
 ctrlDB: Client = create_client(url, key)
 
+# ================ retryQuery: RETRIES THE QUERY 6 TIMES VIA DELAY TO DEAL WITH CONCURRENT REQUESTS ================
+# USE: retryQuery(lambda: ctrlDB.table("questions").select("*").execute())
+# the lambda thing is so that the following code is not executed until inside the retryQuery function
+def retryQuery(op, *, attempts=6, baseDelay=0.2, maxDelay=2.0):
+    lastException = None
+    for attempt in range(attempts):
+        try:
+            return op()
+        except Exception as e:
+            # Keep track of the last exception to raise if we exhaust all attempts
+            lastException = e
+
+            # Random delays and jitter help mitigate concurrent request issues collisions i think.
+            delay = min(maxDelay, baseDelay * (2 ** attempt))
+            delay = delay * (0.5 + random.random())
+            time.sleep(delay)
+    raise lastException
+
+
 # ================ FetchAllQuestions: FETCH ALL QUESTIONS FROM "questions" TABLE ================
 def FetchAllQuestions() -> list[dict[str, Any]]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
     # Fetches only the fields needed to populate the select list
-    response = ctrlDB.table("questions").select("id,title").order("id").execute()
+    response = retryQuery(lambda: ctrlDB.table("questions").select("id,title").order("id").execute())
     fetchError = getattr(response, "error", None)
     if fetchError:
         raise RuntimeError(f"Supabase fetch failed: {fetchError}")
@@ -36,8 +56,8 @@ def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
-    response = (
-        ctrlDB.table("questions")
+    response = retryQuery(
+        lambda: ctrlDB.table("questions")
         # TEMP: DB columns are swapped. TODO: swap back to prompt_template, question_template once fixed.
         .select("id,title,question_template,prompt_template,feedback_template,question_type,language")
         .eq("id", questionId)
@@ -79,7 +99,7 @@ def SaveQuestion(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    response = ctrlDB.table("questions").insert(payload).execute()
+    response = retryQuery(lambda: ctrlDB.table("questions").insert(payload).execute())
     insertError = getattr(response, "error", None)
     if insertError:
         raise RuntimeError(f"Supabase insert failed: {insertError}")
@@ -119,7 +139,7 @@ def UpdateQuestion(
         "language": language,
     }
 
-    response = ctrlDB.table("questions").update(payload).eq("id", questionId).execute()
+    response = retryQuery(lambda: ctrlDB.table("questions").update(payload).eq("id", questionId).execute())
     updateError = getattr(response, "error", None)
     if updateError:
         raise RuntimeError(f"Supabase update failed: {updateError}")
@@ -137,7 +157,7 @@ def DeleteQuestion(questionId: int) -> None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
-    response = ctrlDB.table("questions").delete().eq("id", questionId).execute()
+    response = retryQuery(lambda: ctrlDB.table("questions").delete().eq("id", questionId).execute())
     deleteError = getattr(response, "error", None)
     if deleteError:
         raise RuntimeError(f"Supabase delete failed: {deleteError}")
@@ -148,7 +168,7 @@ def SetQuestionTags(questionId: int, tagIds: list[int]) -> None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
-    deleteResponse = ctrlDB.table("question_tags").delete().eq("question_id", questionId).execute()
+    deleteResponse = retryQuery(lambda: ctrlDB.table("question_tags").delete().eq("question_id", questionId).execute())
     deleteError = getattr(deleteResponse, "error", None)
     if deleteError:
         raise RuntimeError(f"Supabase delete failed: {deleteError}")
@@ -157,7 +177,7 @@ def SetQuestionTags(questionId: int, tagIds: list[int]) -> None:
         return
 
     payload = [{"question_id": questionId, "tag_id": tagId} for tagId in tagIds]
-    insertResponse = ctrlDB.table("question_tags").insert(payload).execute()
+    insertResponse = retryQuery(lambda: ctrlDB.table("question_tags").insert(payload).execute())
     insertError = getattr(insertResponse, "error", None)
     if insertError:
         raise RuntimeError(f"Supabase insert failed: {insertError}")
@@ -169,22 +189,22 @@ def FetchFilteredQuestions(tags: list[str], questionTypes: list[str]) -> list[in
     
     if tags and questionTypes:
         # tl note: I want the ID of questions that have a question_type in the questionTypes list AND have at least one tag in the tags list
-        response = ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_type", questionTypes).in_("question_tags.tags.name", tags).execute()
+        response = retryQuery(lambda: ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_type", questionTypes).in_("question_tags.tags.name", tags).execute())
         fetchError = getattr(response, "error", None)
     
     elif not questionTypes and tags:
         # If only tags provided, fetch question IDs that have at least one tag in the tags list
-        response = ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_tags.tags.name", tags).execute()
+        response = retryQuery(lambda: ctrlDB.table("questions").select("id, question_tags!inner(tags!inner(name))").in_("question_tags.tags.name", tags).execute())
         fetchError = getattr(response, "error", None)
 
     elif not tags and questionTypes:
         # If only question types provided, fetch question IDs that have a question_type in the questionTypes list
-        response = ctrlDB.table("questions").select("id").in_("question_type", questionTypes).execute()
+        response = retryQuery(lambda: ctrlDB.table("questions").select("id").in_("question_type", questionTypes).execute())
         fetchError = getattr(response, "error", None)
 
     else:
         # If no filters provided, fetch all question IDs
-        response = ctrlDB.table("questions").select("id").execute()
+        response = retryQuery(lambda: ctrlDB.table("questions").select("id").execute())
         fetchError = getattr(response, "error", None)
 
     if fetchError:
@@ -208,7 +228,7 @@ def FetchAllTags() -> list[dict[str, Any]]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
-    response = ctrlDB.table("tags").select("id,name,category").order("id").execute()
+    response = retryQuery(lambda: ctrlDB.table("tags").select("id,name,category").order("id").execute())
     fetchError = getattr(response, "error", None)
     if fetchError:
         raise RuntimeError(f"Supabase fetch failed: {fetchError}")
@@ -224,7 +244,7 @@ def FetchTagIdsForQuestion(questionId: int) -> list[int]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
-    response = ctrlDB.table("question_tags").select("tag_id").eq("question_id", questionId).execute()
+    response = retryQuery(lambda: ctrlDB.table("question_tags").select("tag_id").eq("question_id", questionId).execute())
     fetchError = getattr(response, "error", None)
     if fetchError:
         raise RuntimeError(f"Supabase fetch failed: {fetchError}")
@@ -240,8 +260,8 @@ def FetchRandomName() -> dict[str, Any] | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
-    response = (
-        ctrlDB.table("randomnames")
+    response = retryQuery(
+        lambda: ctrlDB.table("randomnames")
         .select("FirstName,MiddleInitial,LastName")
         .execute()
     )
