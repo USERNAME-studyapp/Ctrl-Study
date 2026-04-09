@@ -65,9 +65,9 @@ def question():
 
     question: QuestionFetch.QuestionContainer
     if "randQuestion" not in session:
-        q = QuestionFetch.getRandomQuestion()
+        q = QuestionFetch.getRandomQuestions(count=1)
         if q is not None:
-            question = q
+            question = q[0]
             session["randQuestion"] = question
 
     question = session["randQuestion"]
@@ -105,8 +105,9 @@ def quizQuestions():
     else:
         quizQuestionTags: list[str] = session.get("quizQuestionTags", None)
         quizQuestionTypes: list[str] = session.get("quizQuestionTypes", None)
-        with ThreadPoolExecutor() as executor:
-            questions = list(executor.map(lambda _: QuestionFetch.getRandomQuestion(tags=quizQuestionTags, types=quizQuestionTypes), range(10)))
+        questions = QuestionFetch.getRandomQuestions(count=10, tags=quizQuestionTags, types=quizQuestionTypes)
+        if questions is None:
+            raise ValueError("No questions found")
         session["questions"] = questions
 
     questions = [q for q in questions if q is not None]

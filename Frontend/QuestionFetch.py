@@ -34,42 +34,53 @@ class QuestionContainer:
             self.type)
         )
 
-def getRandomQuestion(tags: list[str] = [], types: list[str] = [], generateNew: bool = False) -> QuestionContainer | None:
-    def getDbQuestion() -> dict[str, str] | None:
+def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = []) -> list[QuestionContainer] | None:
+    def getDbQuestions() -> list[dict[str, str]] | None:
         print(f"Fetching question with tags: {tags} and types: {types}")
         options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types)
         print(options)
         if not options:
             return None
-        questionID = random.choice(options)
-        c = supabase_client.FetchQuestionById(questionID)
 
-        if c is None:
-            raise ValueError("Question not found.")
-        return {"type": c["question_type"], "template": c["prompt_template"], "prompt": c["question_template"], "feedback": c["feedback_template"]}
+        questions = []
+
+        for _ in range(count):
+            questionID = random.choice(options)
+            c = supabase_client.FetchQuestionById(questionID)
+            if c is None:
+                raise ValueError("Question not found.")
+            questions.append({"type": c["question_type"], "template": c["prompt_template"], "prompt": c["question_template"], "feedback": c["feedback_template"]})
+
+
+        return questions
 
     def shuffleAnswers(answers: list[tuple[str, str]]) -> Any:
         opt = answers
         random.shuffle(opt)
         return cast(Any, opt)
 
-    q = getDbQuestion()
+    q = getDbQuestions()
     if q is None:
         return None
-    gq = generateQuestion(
-        templateText=q["template"], promptText=q["prompt"], feedbackText=q["feedback"]
-    )
 
-    gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]])
-    gq["type"] = q["type"]
-    return QuestionContainer(
-        prompt=gq["prompt"],
-        question=gq["question"],
-        correct=gq["answer"],
-        feedback=gq["feedback"],
-        answer=gq["answers"],
-        type=gq["type"],
-    )
+    questions = []
+
+    for qu in q:
+        gq = generateQuestion(
+            templateText=qu["template"], promptText=qu["prompt"], feedbackText=qu["feedback"]
+        )
+        gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]])
+        gq["type"] = qu["type"]
+        questions.append(QuestionContainer(
+            prompt=gq["prompt"],
+            question=gq["question"],
+            correct=gq["answer"],
+            feedback=gq["feedback"],
+            answer=gq["answers"],
+            type=gq["type"],
+        ))
+
+    return questions
 
 def getQuestionForm(question: QuestionContainer) -> QuestionForm:
 
