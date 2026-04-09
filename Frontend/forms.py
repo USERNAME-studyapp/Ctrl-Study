@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
-from pygments.lexers import CppLexer
+from pygments.lexers import CppLexer, PythonLexer, MarkdownLexer
 from wtforms import Field, RadioField, SubmitField, SelectMultipleField, TextAreaField, FieldList, FormField, validators, widgets
 from wtforms.fields import IntegerField
 from wtforms.validators import DataRequired
@@ -40,8 +40,15 @@ class QuestionForm(FlaskForm, Generic[T]):
     answer: T
 
     def format_html(self) -> str:
+        match self.language:
+            case "C++":
+                lexer = CppLexer()
+            case "Python":
+                lexer = PythonLexer()
+            case _:
+                lexer = MarkdownLexer()
         formatter = HtmlFormatter(style="monokai", noclasses=True)
-        highlighted = highlight(self.question, CppLexer(), formatter)
+        highlighted = highlight(self.question, lexer, formatter)
         return highlighted
 
 

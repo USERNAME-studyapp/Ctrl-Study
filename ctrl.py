@@ -122,12 +122,10 @@ def quiz():
     form = SetupQuizForm(types=types, tags=ts, languages=languages)
     if "quizQuestions" in session:
         session.pop("quizQuestions")
-    if "quizQuestionTags" in session:
-        session.pop("quizQuestionTags")
-    if "quizQuestionTypes" in session:
-        session.pop("quizQuestionTypes")
     if "SingleQuestionState" in session:
         session.pop("SingleQuestionState")
+    if "progress" in session:
+        session.pop("progress")
     if form.validate_on_submit():
         print(form.tagSelection.data, form.questionTypes.data)
         t = form.tagSelection.data
