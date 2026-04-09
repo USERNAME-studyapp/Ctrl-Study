@@ -34,7 +34,7 @@ class QuestionContainer:
             self.type)
         )
 
-def getRandomQuestion(tags: list[str] | None = None, types: list[str] | None = None, generateNew: bool = False) -> QuestionContainer | None:
+def getRandomQuestion(tags: list[str] = [], types: list[str] = [], generateNew: bool = False) -> QuestionContainer | None:
     def getDbQuestion() -> dict[str, str] | None:
         print(f"Fetching question with tags: {tags} and types: {types}")
         options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types)
