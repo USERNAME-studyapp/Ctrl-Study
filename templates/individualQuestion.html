@@ -1,20 +1,33 @@
 {% extends "base.html" %} {% block body %}
+
 <h1>Question</h1>
 <p><b>{{ form.prompt }}</b></p>
 
-<p>{{ currentQuestion }} / {{ totalQuestions }}</p>
-<progress id="progress" value="{{ currentQuestion }}" max="{{ totalQuestions }}"/>
 <div style="width: fit-content">{{ form.format_html()|safe }}</div>
 <form style="tab-size: 4" action="" method="post" novalidate>
     {{ form.hidden_tag() }}
+    <fieldset {{ "disabled" if showingAnswer }}>
     {{ form.answer(style="list-style:none") }}
-    <h3>{{ status }}</h3>
+    </fieldset>
+    <h3 style="color: {{ "green" if status == "Correct" else "red" if status == "Incorrect" }}">{{ status }}</h3>
     {% if showingAnswer %}
+    {% if status == "Incorrect" %}
+    <p><i>The correct answer was:</i></p>
+    <ul>
+        {% for val in form.correct %}
+        <li>{{ val }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
     <p>{{ form.feedback }}</p>
     {% endif %}
     <p>
         {{ form.submit(value='Next' if showingAnswer else 'Submit') }}
     </p>
 </form>
+
+<hr>
+<p>{{ currentQuestion }} / {{ totalQuestions }}</p>
+<progress id="progress" value="{{ currentQuestion }}" max="{{ totalQuestions }}"/>
 
 {% endblock %}
