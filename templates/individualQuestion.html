@@ -21,9 +21,11 @@
     {% endif %}
     <p>{{ form.feedback }}</p>
     {% endif %}
-    <p>
-        {{ form.submit(value='Next' if showingAnswer else 'Submit') }}
-    </p>
+    {% if showingAnswer %}
+        <button type="submit" name="action" value="next">Next</button>
+    {% else %}
+        <button type="submit" name="action" value="submit">Submit</button>
+    {% endif %}
 </form>
 
 <hr>

@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 
-from flask import Flask, render_template, session                               # Flask imports provide routing, form access, session state, and redirects
+from flask import Flask, render_template, session, request                             # Flask imports provide routing, form access, session state, and redirects
 
 from Frontend import QuestionFetch
 from Frontend.forms import SetupQuizForm
@@ -57,51 +57,62 @@ def templateIndex():
 
 @app.route("/question", methods=["GET", "POST"])
 def question():
+    if "quizQuestions" not in session:
+        raise RuntimeError("quizQuestions not in session")
+    if "progress" not in session:
+        session["progress"] = 0
+    if session["progress"] >= len(session["quizQuestions"]):
+        raise IndexError("progress out of range")
+
     if "SingleQuestionState" not in session:
         session["SingleQuestionState"] = "NewQuestion"
     elif session["SingleQuestionState"] == "ToNewQuestion":
         session["SingleQuestionState"] = "NewQuestion"
 
-
-    question: QuestionFetch.QuestionContainer
-    if "quizQuestions" not in session:
-        raise RuntimeError("quizQuestions not in session")
-
-    if "progress" not in session:
-        session["progress"] = 0
-
-    if session["progress"] >= len(session["quizQuestions"]):
-        raise IndexError("progress out of range")
-
-
     question = session["quizQuestions"][session["progress"]]
     form = QuestionFetch.getQuestionForm(question)
-
     status: str = "Please answer the question."
     state = session["SingleQuestionState"]
 
-    if form.validate_on_submit():
-        match state:
-            case "Answered":
-                session["SingleQuestionState"] = "ToNewQuestion"
-                session["progress"] += 1
-                return redirect(url_for("question"))
-            case "NewQuestion":
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "next" and state == "Answered":
+            session["progress"] += 1
+            session["SingleQuestionState"] = "ToNewQuestion"
+            session.modified = True
+            return redirect(url_for("question"))
+
+        if action == "submit" and form.validate_on_submit():
+            if state == "NewQuestion":
                 session["SingleQuestionState"] = "Answered"
-                if form.answer.data in form.correct:
-                    status = "Correct"
-                    print("correct")
-                else:
-                    status = "Incorrect"
-                    print("incorrect")
+                session.modified = True
+
+                correct = form.correct
+                if not isinstance(correct, (list, tuple, set)):
+                    correct = [correct]
+
+                status = "Correct" if form.answer.data in correct else "Incorrect"
+
                 return render_template(
-                    "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=True, currentQuestion=session["progress"] + 1, totalQuestions=len(session["quizQuestions"])
+                    "individualQuestion.html",
+                    title="Question",
+                    form=form,
+                    status=status,
+                    showingAnswer=True,
+                    currentQuestion=session["progress"] + 1,
+                    totalQuestions=len(session["quizQuestions"]),
                 )
 
     return render_template(
-        "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=False, currentQuestion=session["progress"] + 1, totalQuestions=len(session["quizQuestions"])
+        "individualQuestion.html",
+        title="Question",
+        form=form,
+        status=status,
+        showingAnswer=False,
+        currentQuestion=session["progress"] + 1,
+        totalQuestions=len(session["quizQuestions"]),
     )
-
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
     tags = supabase_client.FetchAllTags()
