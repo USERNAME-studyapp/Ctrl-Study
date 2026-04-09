@@ -40,7 +40,7 @@ def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = 
     def getDbQuestions() -> list[dict[str, str]] | None:
         print(f"Fetching question with tags: {tags} and types: {types}")
         options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types)
-        print(options)
+        print(f"Got question ids: {options}")
         if not options:
             return None
 
