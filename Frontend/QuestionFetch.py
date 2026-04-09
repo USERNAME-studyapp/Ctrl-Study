@@ -1,13 +1,20 @@
 from Frontend.forms import QuestionForm
 import random
+from random import choice
 from typing import Any, cast
 from Frontend.forms import RadioQuestionForm, CheckboxQuestionForm, ShortAnswerQuestionForm
 from parser_engine import generateQuestion
 # from flask import session
 from dataclasses import dataclass
 import supabase_client
+import sys
 
 questionIDs = supabase_client.FetchAllQuestions()
+
+def makeSeed() -> int:
+    aSeed = random.randrange(sys.maxsize)
+    return aSeed
+
 
 @dataclass
 class QuestionContainer:
@@ -36,7 +43,7 @@ class QuestionContainer:
             self.type)
         )
 
-def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = [], languages: list[str] = []) -> list[QuestionContainer] | None:
+def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: list[str] = [], languages: list[str] = []) -> list[QuestionContainer] | None:
     def getDbQuestions() -> list[dict[str, str]] | None:
         print(f"Fetching question with tags: {tags} and types: {types}")
         options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types, languages=languages)
@@ -46,18 +53,25 @@ def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = 
 
         questions = []
 
+        random.seed(seed)
         for _ in range(count):
-            questionID = random.choice(options)
+            questionID = choice(options)
             c = supabase_client.FetchQuestionById(questionID)
             if c is None:
                 raise ValueError("Question not found.")
-            questions.append({"type": c["question_type"], "template": c["prompt_template"], "prompt": c["question_template"], "feedback": c["feedback_template"], "language": c["language"]})
-
+            questions.append({
+                    "type": c["question_type"],
+                    "template": c["prompt_template"],
+                    "prompt": c["question_template"],
+                    "feedback": c["feedback_template"],
+                    "language": c["language"]
+                })
 
         return questions
 
-    def shuffleAnswers(answers: list[tuple[str, str]]) -> Any:
+    def shuffleAnswers(answers: list[tuple[str, str]], seed: int) -> Any:
         opt = answers
+        random.seed(seed)
         random.shuffle(opt)
         return cast(Any, opt)
 
@@ -69,9 +83,9 @@ def getRandomQuestions(count: int = 1, tags: list[str] = [], types: list[str] = 
 
     for qu in q:
         gq = generateQuestion(
-            templateText=qu["template"], promptText=qu["prompt"], feedbackText=qu["feedback"]
+            templateText=qu["template"], promptText=qu["prompt"], feedbackText=qu["feedback"], seed=seed
         )
-        gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]])
+        gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]], seed=seed)
         gq["type"] = qu["type"]
         questions.append(QuestionContainer(
             prompt=gq["prompt"],

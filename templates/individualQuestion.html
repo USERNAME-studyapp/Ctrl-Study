@@ -1,16 +1,24 @@
-{% extends "base.html" %} {% block body %}
+{% extends "base.html" %}
+{% block headerbar %}
+<div class="progressbar" style="display:inline-flex; margin:auto; width: 100%;">
+    <p>{{ currentQuestion }} / {{ totalQuestions }}</p>
+    <meter value="{{ currentQuestion }}" max="{{ totalQuestions }}" style="margin: auto; flex-grow: 1;" />
+</div>
+{% endblock %}
 
+{% block body %}
 <div class="clear_bordering">
+
     <h1>Question</h1>
     <h3>{{ form.language }}</h3>
     <p><b>{{ form.prompt }}</b></p>
-    <div style="width: fit-content">{{ form.format_html()|safe }}</div>
+    <div style="width: fit-content; tab-size: 4">{{ form.format_html()|safe }}</div>
     <form style="tab-size: 4" action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <fieldset {{ "disabled" if showingAnswer }}>
-            {{ form.answer(style="list-style:none") }}
+            {{ form.answer(style="list-style:none", class="answer") }}
         </fieldset>
-        <h3 style="color: {{ " green" if status=="Correct" else "red" if status=="Incorrect" }}">{{ status }}</h3>
+        <h3 style="color: {{ "green" if status=="Correct" else "red" if status=="Incorrect" }}">{{ status }}</h3>
         {% if showingAnswer %}
         {% if status == "Incorrect" %}
         <div class="slight_clear_bordering">
@@ -30,10 +38,8 @@
         <button type="submit" name="action" value="submit">Submit</button>
         {% endif %}
     </form>
-
-    <hr>
-    <p>{{ currentQuestion }} / {{ totalQuestions }}</p>
-    <progress id="progress" value="{{ currentQuestion }}" max="{{ totalQuestions }}" />
 </div>
+
+<p style="color: grey; text-align: center;"><i>Seed: {{ session["seed"] }}</i></p>
 
 {% endblock %}

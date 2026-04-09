@@ -30,13 +30,17 @@
                     <h3 style="font-size: 23px;">Question Count</h3>
                     {{ form.questionCount }}
                 </div>
+                <div class="column">
+                    <h3 style="font-size: 23px;">Seed</h3>
+                    {{ form.seed }}
+                </div>
             </div>
 
     </div>
     <br>
     <hr>
     <div style="text-align: center; margin: 20px;">
-        {{ form.submit }}
+        {{ form.submit(class="btn") }}
     </div>
     </form>
 

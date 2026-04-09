@@ -211,3 +211,81 @@ button:hover,
 #tagSelection {
     padding-inline-start: 8px;
 }
+
+.progressbar {
+    margin: auto;
+    max-width: 70%;
+    max-height: 80%;
+    overflow: auto;
+    word-wrap: break-word;
+}
+
+/*
+* BEGIN ETHAN STYLING FOR ANSWER OPTIONS
+* I do not claim to enjoy web design.
+* I have given it my best shot, but the main goal was to HAVE the non-native style.
+* Please change colors etc as needed and remove any states you deem unnecessary.
+*/
+
+
+ul.answer li {
+    padding: 12px 18px;
+    margin: 5px 0;
+    font-size: 18px;
+    border: 1px solid #627277;
+    border-radius: 5px;
+    text-decoration: none;
+    background-color: none;
+    color: white;
+    position: relative;
+}
+
+ul.answer li input[type="radio"], ul.answer li input[type="checkbox"] {
+    appearance: none;
+}
+
+ul.answer li {
+    transition: background-color 0.1s;
+}
+
+/* this one "stretches", if you will, the label to cover the entire list item */
+ul.answer li label::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    cursor: pointer;
+}
+
+ul.answer li:hover {
+    background-color: #6a6a6a;
+}
+
+ul.answer li:has(input:checked):hover {
+    background-color: #627277;
+}
+
+ul.answer li:has(input:checked) {
+    background-color: #7b8f95;
+}
+
+ul.answer li:has(input:disabled) {
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: grayscale(100%) brightness(50%);
+}
+
+/* feeble attempt */
+textarea.answer {
+    padding: 12px 18px;
+    margin: auto;
+    width: 90%;
+    font-size: 18px;
+    border: 1px solid #627277;
+    border-radius: 5px;
+    text-decoration: none;
+    background-color: none;
+    color: white;
+}

@@ -24,6 +24,8 @@ from flask import redirect, url_for
 import supabase_client
 import template_builder
 
+from Frontend.QuestionFetch import makeSeed
+
 import shutil
 cache_path = "./flask_session_cache"
 try:
@@ -54,15 +56,19 @@ def home():
 def templateIndex():
     return template_builder.templateIndex()
 
+@app.route("/quiz-complete", methods=["GET"])
+def quizComplete():
+    return render_template("QuizComplete.html", title="Ctrl-Study: Quiz Complete")
 
 @app.route("/question", methods=["GET", "POST"])
 def question():
     if "quizQuestions" not in session:
-        raise RuntimeError("quizQuestions not in session")
+        print("User tried to use quiz question page without questions in session")
+        return redirect(url_for("quiz"))
     if "progress" not in session:
         session["progress"] = 0
     if session["progress"] >= len(session["quizQuestions"]):
-        raise IndexError("progress out of range")
+        return redirect(url_for("quizComplete"))
 
     if "SingleQuestionState" not in session:
         session["SingleQuestionState"] = "NewQuestion"
@@ -89,8 +95,12 @@ def question():
                 session.modified = True
 
                 correct = form.correct
+                answers = form.answer.data
 
-                status = "Correct" if all(answer in correct for answer in form.answer.data) else "Incorrect"
+                if not isinstance(answers, list):
+                    answers = [answers]
+
+                status = "Correct" if set(answers) == set(correct) else "Incorrect"
 
                 return render_template(
                     "individualQuestion.html",
@@ -131,11 +141,13 @@ def quiz():
         t = form.tagSelection.data
         types = form.questionTypes.data
         count = form.questionCount.data
-        languages = form.languageSelection.data
+        languageSel = form.languageSelection.data
+        seed = form.seed.data if form.seed.data else makeSeed()
+        session["seed"] = seed
         print(t)
         if t is not None and types is not None and count is not None:
             tag = [ts[int(id)-1][1] for id in t]
-            session["quizQuestions"] = QuestionFetch.getRandomQuestions(count=count, tags=tag, types=types, languages=languages)
+            session["quizQuestions"] = QuestionFetch.getRandomQuestions(count=count, tags=tag, types=types, languages=languageSel, seed=seed)
         return redirect(url_for("question"))
     return render_template("QuizSetup.html", tags=tags, form=form)
 
