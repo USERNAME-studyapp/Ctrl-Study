@@ -64,13 +64,17 @@ def question():
 
 
     question: QuestionFetch.QuestionContainer
-    if "randQuestion" not in session:
-        q = QuestionFetch.getRandomQuestions(count=1)
-        if q is not None:
-            question = q[0]
-            session["randQuestion"] = question
+    if "quizQuestions" not in session:
+        raise RuntimeError("quizQuestions not in session")
 
-    question = session["randQuestion"]
+    if "progress" not in session:
+        session["progress"] = 0
+
+    if session["progress"] >= len(session["quizQuestions"]):
+        raise IndexError("progress out of range")
+
+
+    question = session["quizQuestions"][session["progress"]]
     form = QuestionFetch.getQuestionForm(question)
 
     status: str = "Please answer the question."
@@ -79,8 +83,8 @@ def question():
     if form.validate_on_submit():
         match state:
             case "Answered":
-                session.pop("randQuestion")
                 session["SingleQuestionState"] = "ToNewQuestion"
+                session["progress"] += 1
                 return redirect(url_for("question"))
             case "NewQuestion":
                 session["SingleQuestionState"] = "Answered"
@@ -98,25 +102,6 @@ def question():
         "individualQuestion.html", title="Question", form=form, status=status, showingAnswer=False
     )
 
-@app.route("/quizQuestions", methods=["GET", "POST"])
-def quizQuestions():
-    if "questions" in session:
-        questions = session.get("questions", None)
-    else:
-        quizQuestionTags: list[str] = session.get("quizQuestionTags", None)
-        quizQuestionTypes: list[str] = session.get("quizQuestionTypes", None)
-        questions = QuestionFetch.getRandomQuestions(count=10, tags=quizQuestionTags, types=quizQuestionTypes)
-        if questions is None:
-            raise ValueError("No questions found")
-        session["questions"] = questions
-
-    questions = [q for q in questions if q is not None]
-    forms = [QuestionFetch.getQuestionForm(q) for q in list(set(questions))]
-    session.pop("quizQuestionTags", None)
-    session.pop("quizQuestionTypes", None)
-
-    return render_template("quizQuestions.html", questions=forms)
-
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
     tags = supabase_client.FetchAllTags()
@@ -132,12 +117,12 @@ def quiz():
     if form.validate_on_submit():
         print(form.tagSelection.data, form.questionTypes.data)
         t = form.tagSelection.data
+        types = form.questionTypes.data
         print(t)
-        if t is not None:
+        if t is not None and types is not None:
             tag = [ts[int(id)-1][1] for id in t]
-            session["quizQuestionTags"] = tag
-        session["quizQuestionTypes"] = form.questionTypes.data
-        return redirect(url_for("quizQuestions"))
+            session["quizQuestions"] = QuestionFetch.getRandomQuestions(count=10, tags=tag, types=types)
+        return redirect(url_for("question"))
     return render_template("QuizSetup.html", tags=tags, form=form)
 
 # Starts local development server when run directly
