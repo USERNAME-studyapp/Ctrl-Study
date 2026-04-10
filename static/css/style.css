@@ -1,6 +1,6 @@
 /* this is the page change fade animation if you wanna remove it */
 @view-transition {
-  navigation: auto;
+    navigation: auto;
 }
 
 :root {
@@ -217,8 +217,11 @@ button:hover,
     padding-inline-start: 8px;
 }
 
+/* PROGRESS BA */
+
 .progressbar {
     margin: auto;
+    padding: 10px;
     max-width: 70%;
     max-height: 80%;
     overflow: auto;
@@ -245,7 +248,8 @@ ul.answer li {
     position: relative;
 }
 
-ul.answer li input[type="radio"], ul.answer li input[type="checkbox"] {
+ul.answer li input[type="radio"],
+ul.answer li input[type="checkbox"] {
     appearance: none;
 }
 

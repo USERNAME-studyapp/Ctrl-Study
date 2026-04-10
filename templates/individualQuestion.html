@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block headerbar %}
 <div class="progressbar" style="display:inline-flex; margin:auto; width: 100%;">
-    <p>{{ currentQuestion }} / {{ totalQuestions }}</p>
+    <p style="padding-right: 10px">{{ currentQuestion }} / {{ totalQuestions }}</p>
     <meter value="{{ currentQuestion }}" max="{{ totalQuestions }}" style="margin: auto; flex-grow: 1;" />
 </div>
 {% endblock %}
@@ -18,10 +18,10 @@
         <fieldset {{ "disabled" if showingAnswer }}>
             {{ form.answer(style="list-style:none", class="answer") }}
         </fieldset>
-        <h3 style="color: {{ "green" if status=="Correct" else "red" if status=="Incorrect" }}">{{ status }}</h3>
+        <h3 style="color: {{ " green" if status=="Correct" else "red" if status=="Incorrect" }}">{{ status }}</h3>
         {% if showingAnswer %}
-        {% if status == "Incorrect" %}
         <div class="slight_clear_bordering">
+            {% if status == "Incorrect" %}
             <p><i>The correct answer was:</i></p>
             <ul>
                 {% for val in form.correct %}
@@ -31,8 +31,6 @@
             {% endif %}
             <p>{{ form.feedback }}</p>
         </div>
-        {% endif %}
-        {% if showingAnswer %}
         <button type="submit" name="action" value="next">Next</button>
         {% else %}
         <button type="submit" name="action" value="submit">Submit</button>
