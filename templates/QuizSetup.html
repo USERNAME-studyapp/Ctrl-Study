@@ -1,41 +1,44 @@
 {% extends "base.html" %} {% block body %}
-<div style="padding-left: 10px">
+<div>
     <div style="margin: 15px">
         <h1 style="text-align: center; font-size: 50px;font-family: monospace; margin-bottom: 10px;">Quiz</h1>
-        <form method="post">
-            {{ form.hidden_tag() }}
-            <div class="container h-aligning">
-                <div class="column">
-                    <h3 style="font-size: 23px;">Select Question Types</h3>
-                    <div class="clear_bordering_fixed" style="margin-top:25px; margin-bottom: 40px;">
-                        {{ form.questionTypes(style="list-style:none") }}
+        <div class="clear_bordering">
+            <form method="post">
+                {{ form.hidden_tag() }}
+                <div class="container">
+                    <div class="column">
+                        <h3 style="font-size: 23px;">Select Question Types</h3>
+                        <div class="clear_bordering_fixed" style="margin-top:25px; margin-bottom: 45px;">
+                            {{ form.questionTypes(style="list-style:none") }}
+                        </div>
+                        <button type="button" id="select-all-questionTypes">Toggle All Question Types</button>
                     </div>
-                    <button type="button" id="select-all-questionTypes">Toggle All Question Types</button>
-                </div>
-                <div class="column">
-                    <h3 style="font-size: 23px;">Select Tags</h3>
-                    <div class="clear_bordering_fixed">
-                        {{ form.tagSelection(style="list-style:none") }}
+                    <div class="column">
+                        <h3 style="font-size: 23px;">Select Tags</h3>
+                        <div class="clear_bordering_fixed">
+                            {{ form.tagSelection(style="list-style:none") }}
+                        </div>
+                        <button type="button" id="select-all-tags">Toggle All Tags</button>
                     </div>
-                    <button type="button" id="select-all-tags">Toggle All Tags</button>
-                </div>
-                <div class="column">
-                    <h3 style="font-size: 23px;">Select Languages</h3>
-                    <div class="clear_bordering_fixed">
-                        {{ form.languageSelection(style="list-style:none") }}
+                    <div class="column">
+                        <h3 style="font-size: 23px;">Select Languages</h3>
+                        <div class="clear_bordering_fixed" style="margin-top:45px; margin-bottom: 65px;">
+                            {{ form.languageSelection(style="list-style:none") }}
+                        </div>
+                        <button type="button" id="select-all-languages">Toggle All Languages</button>
                     </div>
-                    <button type="button" id="select-all-languages">Toggle All Languages</button>
                 </div>
-                <div class="column">
-                    <h3 style="font-size: 23px;">Question Count</h3>
-                    {{ form.questionCount }}
+                <div class="container h-aligning" style="margin-top: 25px">
+                    <div class="column">
+                        <h3 style="font-size: 23px;">Question Count</h3>
+                        {{ form.questionCount }}
+                    </div>
+                    <div class="column">
+                        <h3 style="font-size: 23px;">Seed</h3>
+                        {{ form.seed }}
+                    </div>
                 </div>
-                <div class="column">
-                    <h3 style="font-size: 23px;">Seed</h3>
-                    {{ form.seed }}
-                </div>
-            </div>
-
+        </div>
     </div>
     <br>
     <hr>
