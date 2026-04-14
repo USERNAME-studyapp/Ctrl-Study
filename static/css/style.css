@@ -26,6 +26,7 @@ body {
     padding: 0;
 }
 
+
 /* ANIMATED BACKGROUND BY CHRIS SMITH. LINK: https://codepen.io/chris22smith/pen/RZogMa*/
 
 .bg {
@@ -121,6 +122,22 @@ fieldset {
     word-wrap: break-word;
 
     background-color: rgba(61, 61, 61, 0.9);
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    box-sizing: border-box;
+    border-radius: 25px;
+}
+
+/* bordering for the preview output box on template page */
+.clear_bordering_out_box {
+    border: 1px solid #6a6a6a;
+    font-size: 17px;
+    padding: 3px 5px 20px 5px;
+    margin: 20px auto 12px auto;
+    max-width: 50%;
+    max-height: 80%;
+    overflow: auto;
+    word-wrap: break-word;
+
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     box-sizing: border-box;
     border-radius: 25px;
@@ -223,6 +240,11 @@ button:hover,
 .v-aligning {
     margin-top: 200px;
     /* margin-bottom: 60px; */
+}
+
+.text_spacing {
+    margin-top: 10px;
+    margin-bottom: 5px
 }
 
 #answer,

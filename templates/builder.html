@@ -1,108 +1,131 @@
 ﻿{% extends "base.html" %}
 {% block head %}
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Template Question Builder</title>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const templateBox = document.getElementById("template_text");
-        if (!templateBox) return;
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Template Question Builder</title>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const templateBox = document.getElementById("template_text");
+    if (!templateBox) return;
 
-        templateBox.addEventListener("keydown", function (event) {
-          if (event.key !== "Tab") return;
-          event.preventDefault();
+    templateBox.addEventListener("keydown", function (event) {
+      if (event.key !== "Tab") return;
+      event.preventDefault();
 
-          const start = templateBox.selectionStart;
-          const end = templateBox.selectionEnd;
-          const value = templateBox.value;
-          const tab = "\t";
+      const start = templateBox.selectionStart;
+      const end = templateBox.selectionEnd;
+      const value = templateBox.value;
+      const tab = "\t";
 
-          templateBox.value = value.slice(0, start) + tab + value.slice(end);
-          templateBox.selectionStart = start + tab.length;
-          templateBox.selectionEnd = start + tab.length;
-        });
-      });
-    </script>
-  </head>
+      templateBox.value = value.slice(0, start) + tab + value.slice(end);
+      templateBox.selectionStart = start + tab.length;
+      templateBox.selectionEnd = start + tab.length;
+    });
+  });
+</script>
+</head>
 {% endblock %}
 
 {% block body %}
-    <h1>Template Question Builder</h1>
+<h1 style="text-align: center; font-size: 40px; font-family: monospace;">Template Question Builder</h1>
+<div class="clear_bordering">
+  {% if status_message %}
+  <p>{{ status_message }}</p>
+  {% endif %}
 
-    {% if status_message %}
-    <p>{{ status_message }}</p>
-    {% endif %}
-
-    <form method="post">
-      <div style="display: flex; gap: 16px; align-items: flex-start;">
-        <div>
+  <form method="post">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+      <div>
+        <div class="text_spacing">
           <label for="question_name">Question Name</label><br />
-          <input id="question_name" name="question_name" type="text" size="60" value="{{ question_name }}" /><br /><br />
-
+        </div>
+        <input id="question_name" name="question_name" type="text" size="60" value="{{ question_name }}" /><br /><br />
+        <div class="text_spacing">
           <label for="prompt_text">Prompt</label><br />
-          <textarea id="prompt_text" name="prompt_text" rows="4" cols="100">{{ prompt_text }}</textarea><br /><br />
+        </div>
+        <textarea id="prompt_text" name="prompt_text" rows="4" cols="75">{{ prompt_text }}</textarea><br /><br />
 
-          <div style="display: flex; gap: 16px; align-items: flex-start;">
-            <div>
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+          <div>
+            <div class="text_spacing">
               <label>Tags</label><br />
-              <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
-                {% for tag in available_tags %}
-                <label style="display: block; margin-bottom: 4px;">
-                  <input type="checkbox" name="tag_ids" value="{{ tag.id }}" {% if tag.id in selected_tag_ids %}checked{% endif %} />
-                  {{ tag.name }}
-                </label>
-                {% endfor %}
-              </div>
             </div>
+            <div style="border: 1px solid #ccc; padding: 8px; width: 320px; max-height: 180px; overflow-y: auto;">
+              {% for tag in available_tags %}
+              <label style="display: block; margin-bottom: 4px;">
+                <input type="checkbox" name="tag_ids" value="{{ tag.id }}" {% if tag.id in selected_tag_ids %}checked{%
+                  endif %} />
+                {{ tag.name }}
+              </label>
+              {% endfor %}
+            </div>
+          </div>
 
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-              <div>
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <div class="text_spacing">
                 <label for="question_type">Question Type</label><br />
-                <select id="question_type" name="question_type" style="width: 200px;">
-                  <option value="multiple_choice" {% if question_type == "multiple_choice" %}selected{% endif %}>Multiple Choice</option>
-                  <option value="multiple_select" {% if question_type == "multiple_select" %}selected{% endif %}>Multiple Select</option>
-                  <option value="short_answer" {% if question_type == "short_answer" %}selected{% endif %}>Short Answer</option>
-                  <option value="true_false" {% if question_type == "true_false" %}selected{% endif %}>True False</option>
-                </select>
               </div>
-              <div>
-                <label for="language">Language</label><br />
-                <select id="language" name="language" style="width: 200px;">
-                  <option value="C++" {% if language == "C++" %}selected{% endif %}>C++</option>
-                  <option value="Python" {% if language == "Python" %}selected{% endif %}>Python</option>
-                </select>
-              </div>
+              <select id="question_type" name="question_type" style="width: 200px;">
+                <option value="multiple_choice" {% if question_type=="multiple_choice" %}selected{% endif %}>Multiple
+                  Choice</option>
+                <option value="multiple_select" {% if question_type=="multiple_select" %}selected{% endif %}>Multiple
+                  Select</option>
+                <option value="short_answer" {% if question_type=="short_answer" %}selected{% endif %}>Short Answer
+                </option>
+                <option value="true_false" {% if question_type=="true_false" %}selected{% endif %}>True False</option>
+              </select>
             </div>
-          </div><br /><br />
+            <div>
+              <div class="text_spacing">
+                <label for="language">Language</label><br />
+              </div>
+              <select id="language" name="language" style="width: 200px;">
+                <option value="C++" {% if language=="C++" %}selected{% endif %}>C++</option>
+                <option value="Python" {% if language=="Python" %}selected{% endif %}>Python</option>
+              </select>
+            </div>
+          </div>
+        </div><br /><br />
 
+        <div class="text_spacing">
           <label for="template_text">Template Input</label><br />
-          <textarea id="template_text" name="template_text" rows="24" cols="100">{{ template_text }}</textarea><br /><br />
+        </div>
+        <textarea id="template_text" name="template_text" rows="24" cols="75">{{ template_text }}</textarea><br /><br />
 
+        <div class="text_spacing">
           <label for="feedback_text">Feedback</label><br />
-          <textarea id="feedback_text" name="feedback_text" rows="4" cols="100">{{ feedback_text }}</textarea><br /><br />
-
-          <input type="hidden" name="selected_question_id" value="{{ selected_question_id }}" />
-
-          <button type="submit" name="action" value="preview">Preview</button>
-          <button type="submit" name="action" value="save">Save</button>
-          <button type="submit" name="action" value="new">New Question</button>
         </div>
+        <textarea id="feedback_text" name="feedback_text" rows="4" cols="75">{{ feedback_text }}</textarea><br /><br />
 
-        <div>
-          <label for="chosen_question_id">Saved Questions</label><br />
-          <select id="chosen_question_id" name="chosen_question_id" size="20" style="width: 320px; overflow-y: auto;">
-            {% for item in saved_questions %}
-            <option value="{{ item.id }}" {% if item.id == selected_question_id %}selected{% endif %}>{{ item.title }}</option>
-            {% endfor %}
-          </select><br /><br />
+        <input type="hidden" name="selected_question_id" value="{{ selected_question_id }}" />
 
-          <button type="submit" name="action" value="load">Load Selected</button>
-          <button type="submit" name="action" value="delete">Delete Selected</button>
-        </div>
+        <button type="submit" name="action" value="preview">Preview</button>
+        <button type="submit" name="action" value="save">Save</button>
+        <button type="submit" name="action" value="new">New Question</button>
       </div>
-    </form>
 
-    <h2>Preview Output</h2>
-    <textarea rows="20" cols="140" readonly>{{ preview_output }}</textarea>
+      <div style="margin-left: 20px">
+        <div class="text_spacing">
+          <label for="chosen_question_id">Saved Questions</label><br />
+        </div>
+        <select id="chosen_question_id" name="chosen_question_id" size="20" style="width: 320px; overflow-y: auto;">
+          {% for item in saved_questions %}
+          <option value="{{ item.id }}" {% if item.id==selected_question_id %}selected{% endif %}>{{ item.title }}
+          </option>
+          {% endfor %}
+        </select><br /><br />
 
+        <button type="submit" name="action" value="load">Load Selected</button>
+        <button type="submit" name="action" value="delete">Delete Selected</button>
+      </div>
+    </div>
+  </form>
+
+</div>
+<div class="clear_bordering_out_box" style="text-align: center;">
+  <h2>Preview Output</h2>
+  <textarea rows="20" cols="90" readonly style="max-width: 95%;
+    max-height: 80%;">{{ preview_output }}</textarea>
+</div>
 {% endblock %}
