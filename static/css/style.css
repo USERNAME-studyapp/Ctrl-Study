@@ -288,6 +288,7 @@ ul.answer li {
 ul.answer li input[type="radio"],
 ul.answer li input[type="checkbox"] {
     appearance: none;
+    display: none;
 }
 
 ul.answer li {
