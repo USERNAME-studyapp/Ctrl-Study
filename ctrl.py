@@ -68,6 +68,9 @@ def login():
     form = LoginForm()
     error = None
 
+    if current_user.is_authenticated:
+        return redirect(url_for("home"))
+    
     if request.method == "POST" and form.validate_on_submit():
         username = str(form.username.data or "").strip()
         password = str(form.password.data or "")
