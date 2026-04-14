@@ -6,3 +6,4 @@ pygments
 Flask-Session
 flask-wtf
 bcrypt
+flask-login

@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block body %}
+{% if error %}
+<p>{{ error }}</p>
+{% endif %}
 <form method="POST" action="">
     {{ form.hidden_tag() }}
     <div>
-        {{ form.email.label }}
-        {{ form.email() }}
+        {{ form.username.label }}
+        {{ form.username() }}
     </div>
     <div>
         {{ form.password.label }}

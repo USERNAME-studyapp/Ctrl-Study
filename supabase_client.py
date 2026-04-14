@@ -6,6 +6,7 @@ import bcrypt
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Any
+from flask_login import UserMixin
 
 # load variables from the .flaskenv file
 load_dotenv()
@@ -15,6 +16,13 @@ url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 
 ctrlDB: Client = create_client(url, key)
+
+class User(UserMixin):
+    def __init__(self, username: str, role: str):
+        # Flask-Login stores this in the session
+        self.id = username
+        self.username = username
+        self.role = role
 
 # ================ retryQuery: RETRIES THE QUERY 6 TIMES VIA DELAY TO DEAL WITH CONCURRENT REQUESTS ================
 # USE: retryQuery(lambda: ctrlDB.table("questions").select("*").execute())
@@ -280,15 +288,17 @@ def FetchRandomName() -> dict[str, Any] | None:
 
     return None
 
-# ================ EnsureAdminLogin: VERIFY ADMIN ROLE + PASSWORD FOR LOGIN ================
-def EnsureAdminLogin(username: str, raw_password: str) -> bool:
+# ================ AuthenticateUser: AUTHENTICATE USERNAME + PASSWORD FOR LOGIN ================
+def AuthenticateUser(username: str, raw_password: str) -> User | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
 
+    # uhh this might be bad for rls protection but we don't currently have it on, sooo...
     response = retryQuery(
         lambda: ctrlDB.table("users")
         .select("username,password_hash,role")
         .eq("username", username)
+        .limit(1)
         .execute()
     )
     fetchError = getattr(response, "error", None)
@@ -297,15 +307,37 @@ def EnsureAdminLogin(username: str, raw_password: str) -> bool:
 
     data = getattr(response, "data", None)
     if not isinstance(data, list) or not data:
-        return False
-
-    user = data[0]
-    if user.get("role") != "admin":
-        return False
-
-    stored_hash = user.get("password_hash")
+        return None
+    
+    row = data[0]
+    stored_hash = row.get("password_hash")
     if not isinstance(stored_hash, str) or not stored_hash:
-        return False
+        return None
 
-    return bcrypt.checkpw(raw_password.encode("utf-8"), stored_hash.encode("utf-8"))
+    if bcrypt.checkpw(raw_password.encode("utf-8"), stored_hash.encode("utf-8")):
+        return User(username=str(row.get("username", "")), role=str(row.get("role", "")))
+    return None
 
+
+# ================ LoadUser: LOAD USER FOR FLASK-LOGIN SESSION ================
+def LoadUser(user_id: str) -> User | None:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    response = retryQuery(
+        lambda: ctrlDB.table("users")
+        .select("username,role")
+        .eq("username", user_id)
+        .limit(1)
+        .execute()
+    )
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        return None
+
+    data = getattr(response, "data", None)
+    if not isinstance(data, list) or not data:
+        return None
+
+    row = data[0]
+    return User(username=str(row.get("username", "")), role=str(row.get("role", "")))

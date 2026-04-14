@@ -13,11 +13,13 @@ from flask import Flask, render_template, session, request                      
 
 from Frontend import QuestionFetch
 from Frontend.forms import SetupQuizForm
+from Frontend.LoginForm import LoginForm
 
 from datetime import timedelta
 from flask_session import Session
 
 from flask import redirect, url_for
+from flask_login import LoginManager, login_required, login_user, current_user
 
 import supabase_client
 import template_builder
@@ -43,6 +45,16 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=6)
 
 Session(app)
 
+login_manager = LoginManager()
+login_manager.login_view = "login"
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id: str):
+    try:
+        return supabase_client.LoadUser(user_id)
+    except Exception:
+        return None
 
 # proper home page
 @app.route("/", methods=["GET"])
@@ -50,8 +62,33 @@ Session(app)
 def home():
     return render_template("index.html", title="Ctrl-Study: Home")
 
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    error = None
+
+    if request.method == "POST" and form.validate_on_submit():
+        username = str(form.username.data or "").strip()
+        password = str(form.password.data or "")
+        try:
+            user = supabase_client.AuthenticateUser(username, password)
+        except Exception:
+            user = None
+
+        if user is not None:
+            login_user(user)
+            return redirect(url_for("templateIndex"))
+        error = "Invalid username or password."
+
+    return render_template("Login.html", title="Ctrl-Study: Login", form=form, error=error)
+
 @app.route("/template", methods=["GET", "POST"])
+@login_required
 def templateIndex():
+    # template builder access for ONLY ADMINS
+    if getattr(current_user, "role", None) != "admin":
+        return redirect(url_for("home"))
     return template_builder.templateIndex()
 
 @app.route("/quiz-complete", methods=["GET"])
