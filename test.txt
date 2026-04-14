@@ -91,4 +91,3 @@ Tags:
     dangling-pointers
 
 question to transform:
-

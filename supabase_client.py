@@ -2,6 +2,7 @@ from supabase import create_client, Client
 import os
 import time
 import random
+import bcrypt
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Any
@@ -278,4 +279,33 @@ def FetchRandomName() -> dict[str, Any] | None:
         return random.choice(data)
 
     return None
+
+# ================ EnsureAdminLogin: VERIFY ADMIN ROLE + PASSWORD FOR LOGIN ================
+def EnsureAdminLogin(username: str, raw_password: str) -> bool:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    response = retryQuery(
+        lambda: ctrlDB.table("users")
+        .select("username,password_hash,role")
+        .eq("username", username)
+        .execute()
+    )
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+
+    data = getattr(response, "data", None)
+    if not isinstance(data, list) or not data:
+        return False
+
+    user = data[0]
+    if user.get("role") != "admin":
+        return False
+
+    stored_hash = user.get("password_hash")
+    if not isinstance(stored_hash, str) or not stored_hash:
+        return False
+
+    return bcrypt.checkpw(raw_password.encode("utf-8"), stored_hash.encode("utf-8"))
 
