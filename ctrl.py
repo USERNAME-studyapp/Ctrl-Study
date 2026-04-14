@@ -97,8 +97,15 @@ def question():
                 correct = form.correct
                 answers = form.answer.data
 
+                print(correct)
+                print(answers)
+
                 if not isinstance(answers, list):
                     answers = [answers]
+
+                answers = [answer.replace('\r\n', '\n') for answer in answers]
+
+                print(answers)
 
                 status = "Correct" if set(answers) == set(correct) else "Incorrect"
 

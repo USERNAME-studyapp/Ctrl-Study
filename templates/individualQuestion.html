@@ -16,7 +16,7 @@
     <form style="tab-size: 4" action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <fieldset {{ "disabled" if showingAnswer }}>
-            {{ form.answer(style="list-style:none", class="answer") }}
+            {{ form.answer(style="list-style:none; white-space: pre-line;", class="answer") }}
         </fieldset>
         <h3 style="color: {{ " green" if status=="Correct" else "red" if status=="Incorrect" }}">{{ status }}</h3>
         {% if showingAnswer %}
@@ -24,8 +24,8 @@
             {% if status == "Incorrect" %}
             <p><i>The correct answer was:</i></p>
             <ul>
-                {% for val in form.correct %}
-                <li>{{ val }}</li>
+                {% for val in form.getCorrect() %}
+                <li style="white-space: pre-line;">{{ val }}</li>
                 {% endfor %}
             </ul>
             {% endif %}

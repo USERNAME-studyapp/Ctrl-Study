@@ -4,7 +4,7 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import CppLexer, PythonLexer, MarkdownLexer
 from wtforms import Field, RadioField, SubmitField, SelectMultipleField, TextAreaField, FieldList, FormField, validators, widgets
 from wtforms.fields import IntegerField
-from wtforms.validators import DataRequired, Optional
+from wtforms.validators import DataRequired, Optional, InputRequired
 from typing import TypeVar, Generic
 
 class MultiCheckboxField(SelectMultipleField):
@@ -40,6 +40,9 @@ class QuestionForm(FlaskForm, Generic[T]):
     language: str
     answer: T
 
+    def getCorrect(self) -> list[str]:
+        return self.correct
+
     def format_html(self) -> str:
         match self.language:
             case "C++":
@@ -62,8 +65,11 @@ class RadioQuestionForm(QuestionForm[RadioField]):
     question: str
     correct: list[str]
     feedback: str
-    answer: RadioField = RadioField("Answers", validators=[DataRequired()])
+    answer: RadioField = RadioField("Answers", validators=[InputRequired()])
     submit = SubmitField("Submit")
+
+    def getCorrect(self) -> list[str]:
+        return [self._choice_map[correct] for correct in self.correct]
 
     def __init__(
         self,
@@ -79,18 +85,27 @@ class RadioQuestionForm(QuestionForm[RadioField]):
         super(RadioQuestionForm, self).__init__(*args, **kwargs)
         self.prompt = prompt
         self.question = question
-        self.correct = correct
         self.feedback = feedback
         self.language = language
-        self.answer.choices = [(item, item) for item in answerChoices]
+
+        self._choice_map = {
+            f"choice_{i}": text for i, text in enumerate(answerChoices)
+        }
+        self.answer.choices = list(self._choice_map.items())
+        self.correct = [
+            key for key, text in self._choice_map.items() if text in correct
+        ]
 
 class CheckboxQuestionForm(QuestionForm[MultiCheckboxField]):
     prompt: str
     question: str
     correct: list[str]
     feedback: str
-    answer: MultiCheckboxField = MultiCheckboxField("Answers", validators=[DataRequired()])
+    answer: MultiCheckboxField = MultiCheckboxField("Answers", validators=[InputRequired()])
     submit = SubmitField("Submit")
+
+    def getCorrect(self) -> list[str]:
+        return [self._choice_map[correct] for correct in self.correct]
 
     def __init__(
         self,
@@ -109,7 +124,13 @@ class CheckboxQuestionForm(QuestionForm[MultiCheckboxField]):
         self.correct = correct
         self.feedback = feedback
         self.language = language
-        self.answer.choices = [(item, item) for item in answerChoices]
+        self._choice_map = {
+            f"choice_{i}": text for i, text in enumerate(answerChoices)
+        }
+        self.answer.choices = list(self._choice_map.items())
+        self.correct = [
+            key for key, text in self._choice_map.items() if text in correct
+        ]
 
 class ShortAnswerQuestionForm(QuestionForm[TextAreaField]):
     prompt: str
