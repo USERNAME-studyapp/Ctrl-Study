@@ -7,7 +7,6 @@
 # - Uses parser_engine.generateQuestion to build preview output
 # - Persists named question templates in a local JSON file for editing later
 
-
 from __future__ import annotations
 
 from flask import Flask, render_template, session, request                             # Flask imports provide routing, form access, session state, and redirects
@@ -15,7 +14,6 @@ from flask import Flask, render_template, session, request                      
 from Frontend import QuestionFetch
 from Frontend.forms import SetupQuizForm
 
-from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from flask_session import Session
 
