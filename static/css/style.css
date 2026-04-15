@@ -7,15 +7,28 @@
     color-scheme: light dark;
 }
 
+/* light mode */
 @media (prefers-color-scheme: light) {
     body {
         background-color: #d1d1d1
     }
 }
 
+/* dark mode */
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #2e2e2e
+    }
+}
+
+/* responsiveness */
+@media (min-width: 768px) {
+    h1 {
+        font-size: 45px !important;
+    }
+
+    .column {
+        flex: 1 1 100%;
     }
 }
 
@@ -78,6 +91,7 @@ fieldset {
 
 /* BORDERS */
 
+/* clear border for a fixed amount */
 .clear_bordering_fixed {
     border: 1px solid #6a6a6a;
     font-size: 17px;
@@ -90,18 +104,19 @@ fieldset {
     overflow-y: auto;
     margin-bottom: 12px;
 
-    /* background-color: rgba(92, 92, 92, 0.9); */
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     box-sizing: border-box;
     border-radius: 25px;
 }
 
+/* main clear bordering that is responsive */
 .clear_bordering {
     border: 1px solid #6a6a6a;
     font-size: 17px;
     padding: 3px 25px 20px 25px;
     margin: 30px auto 12px auto;
-    max-width: 70%;
+    width: 95%;
+    max-width: 1100px;
     max-height: 80%;
     overflow: auto;
     word-wrap: break-word;
@@ -111,12 +126,14 @@ fieldset {
     border-radius: 25px;
 }
 
+/* clear responsive bordering but less clear */
 .slight_clear_bordering {
     border: 1px solid #6a6a6a;
     font-size: 17px;
     padding: 3px 25px 20px 25px;
     margin: 5px auto 12px auto;
-    max-width: 98%;
+    width: 95%;
+    max-width: 1100px;
     max-height: 80%;
     overflow: auto;
     word-wrap: break-word;
@@ -127,7 +144,7 @@ fieldset {
     border-radius: 25px;
 }
 
-/* bordering for the preview output box on template page */
+/* clear bordering for the preview output box on template page */
 .clear_bordering_out_box {
     border: 1px solid #6a6a6a;
     font-size: 17px;
@@ -202,27 +219,16 @@ button:hover,
 
 /* grid format */
 .container {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: start;
-}
-
-.container .column:nth-child(1) {
-    justify-self: end;
-}
-
-.container .column:nth-child(2) {
-    justify-self: center;
-    margin-left: 40px;
-    margin-right: 40px;
-}
-
-.container .column:nth-child(3) {
-    justify-self: start;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
 }
 
 .column {
-    /* margin-left: 40px; */
+    flex: 1 1 300px;
+    max-width: 400px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -239,7 +245,6 @@ button:hover,
 /* vertical centering */
 .v-aligning {
     margin-top: 200px;
-    /* margin-bottom: 60px; */
 }
 
 .text_spacing {
@@ -247,6 +252,7 @@ button:hover,
     margin-bottom: 5px
 }
 
+/* padding for selection boxes */
 #answer,
 #questionTypes,
 #tagSelection,
@@ -254,7 +260,7 @@ button:hover,
     padding-inline-start: 8px;
 }
 
-/* PROGRESS BA */
+/* PROGRESS BAR */
 
 .progressbar {
     margin: auto;
