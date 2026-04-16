@@ -12,7 +12,7 @@ from __future__ import annotations
 from flask import Flask, render_template, session, request                             # Flask imports provide routing, form access, session state, and redirects
 
 from Frontend import QuestionFetch
-from Frontend.forms import SetupQuizForm
+from Frontend.forms import RadioQuestionForm, SetupQuizForm, QuestionForm, ShortAnswerQuestionForm
 from Frontend.LoginForm import LoginForm
 
 from datetime import timedelta
@@ -24,7 +24,7 @@ from flask_login import LoginManager, login_required, login_user, current_user
 import supabase_client
 import template_builder
 
-from Frontend.QuestionFetch import makeSeed
+from Frontend.QuestionFetch import QuestionContainer, makeSeed
 
 import shutil
 cache_path = "./flask_session_cache"
@@ -70,7 +70,7 @@ def login():
 
     if current_user.is_authenticated:
         return redirect(url_for("home"))
-    
+
     if request.method == "POST" and form.validate_on_submit():
         username = str(form.username.data or "").strip()
         password = str(form.password.data or "")
@@ -96,7 +96,45 @@ def templateIndex():
 
 @app.route("/quiz-complete", methods=["GET"])
 def quizComplete():
-    return render_template("QuizComplete.html", title="Ctrl-Study: Quiz Complete")
+    if "quizQuestions" not in session or "progress" not in session:
+        print("User tried to use quiz results page without questions or progress in session")
+        return redirect(url_for("quiz"))
+    if session["progress"] < len(session["quizQuestions"]):
+        print("too soon to see those results, don'cha think?")
+        return redirect(url_for("question"))
+    if "quizGivenAnswers" not in session:
+        print("tried to use quiz results page without answers in session")
+        return redirect(url_for("question"))
+    if "correctness" not in session:
+        print("no correctness huh")
+        return redirect(url_for("quiz"))
+
+    correctPercent = len([value for key, value in session["correctness"].items() if value]) / len(session["quizQuestions"])
+
+    forms = list[QuestionForm]()
+    for index, question in enumerate(session["quizQuestions"]):
+        form = QuestionFetch.getQuestionForm(question, label=f"Answers{index}")
+        data: list = session["quizGivenAnswers"][session["quizQuestions"].index(question)]
+        print(data)
+        print(form)
+        if isinstance(form, RadioQuestionForm) or isinstance(form, ShortAnswerQuestionForm):
+            form.answer.data = data[0]
+        else:
+            form.answer.data = data
+        forms.append(form)
+
+    print(session["correctness"])
+
+
+    return render_template (
+        "QuizComplete.html",
+        title="Ctrl-Study: Quiz Complete",
+        questions = session["quizQuestions"],
+        givenAnswers = session["quizGivenAnswers"],
+        correctness = session["correctness"],
+        forms = forms,
+        correctPercent = correctPercent
+    )
 
 @app.route("/question", methods=["GET", "POST"])
 def question():
@@ -105,6 +143,8 @@ def question():
         return redirect(url_for("quiz"))
     if "progress" not in session:
         session["progress"] = 0
+    if "correctness" not in session:
+        session["correctness"] = dict[int, bool]()
     if session["progress"] >= len(session["quizQuestions"]):
         return redirect(url_for("quizComplete"))
 
@@ -140,7 +180,15 @@ def question():
 
                 answers = [answer.replace('\r\n', '\n') for answer in answers]
 
-                status = "Correct" if set(answers) == set(correct) else "Incorrect"
+                if "quizGivenAnswers" not in session:
+                    session["quizGivenAnswers"] = dict[int, list]()
+                session["quizGivenAnswers"][session["progress"]] = answers
+
+                isCorrect = True if set(answers) == set(correct) else False
+
+                session["correctness"][session["progress"]] = True if isCorrect else False
+
+                status = "Correct" if isCorrect else "Incorrect"
 
                 return render_template(
                     "individualQuestion.html",
@@ -165,7 +213,7 @@ def question():
 
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
-    tags = supabase_client.FetchAllTags()
+    tags = supabase_client.FetchUsedTags()
     types = ["multiple_choice", "multiple_select", "short_answer", "true_false"]
     languages = ["Python", "C++"]
     ts = [(tag["id"], tag["name"]) for tag in tags]
@@ -176,6 +224,10 @@ def quiz():
         session.pop("SingleQuestionState")
     if "progress" in session:
         session.pop("progress")
+    if "quizGivenAnswers" in session:
+        session.pop("quizGivenAnswers")
+    if "correctness" in session:
+        session.pop("correctness")
     if form.validate_on_submit():
         print(form.tagSelection.data, form.questionTypes.data)
         t = form.tagSelection.data

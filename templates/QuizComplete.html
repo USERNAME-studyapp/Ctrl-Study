@@ -1,20 +1,48 @@
 {% extends "base.html" %} {% block body %}
 
-<div class="clear_bordering container" style="padding-left: 30px">
+<div class="clear_bordering" style="padding-left: 30px">
     <!-- text and scoring -->
-    <div class="column v-aligning" style="margin-bottom: 200px">
+    <div style="margin-bottom: 50px; text-align: center;">
         <h1 style="font-family: monospace; margin-bottom: 10px;">Results</h1>
 
-        <div style="margin-bottom: 50px; text-align: left;">
+        <div style="margin-bottom: 40px">
             <p>
-                You scored a <strong>blank %</strong>
+                You scored a <strong>{{ "%.2f"|format(correctPercent * 100) }} %</strong>
             </p>
         </div>
     </div>
 
     <!-- section for quiz with results and feedback -->
-    <div class="clear_bordering column" style="padding: 20px">
-        text
+    <div class="clear_bordering" style="padding-top:5px">
+        <hr style="margin-top: 20px;">
+        {% for form in forms %}
+        <h1>Question {{ loop.index }}</h1>
+        <h3>{{ form.language }}</h3>
+        <p><b>{{ form.prompt }}</b></p>
+        <div style="width: fit-content; tab-size: 4">{{ form.format_html()|safe }}</div>
+        <form style="tab-size: 4" action="" novalidate>
+            {{ form.hidden_tag() }}
+            <p><b>You answered:</b></p>
+            <fieldset disabled>
+                {{ form.answer(style="list-style:none; white-space: pre-line;", class="answer") }}
+            </fieldset>
+            <h3 style="color: {{ " green" if correctness[loop.index0] else "red" }}">{{ "Correct" if
+                correctness[loop.index0] else "Incorrect" }}</h3>
+            <div class="slight_clear_bordering">
+                {% if correctness[loop.index0] == False %}
+                <p><i>The correct answer was:</i></p>
+                <ul>
+                    {% for val in form.getCorrect() %}
+                    <li style="white-space: pre-line;">{{ val }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <p>{{ form.feedback }}</p>
+            </div>
+            <hr style="margin-top: 45px;">
+            {% endfor %}
     </div>
 </div>
+
+<p style="color: grey; text-align: center;"><i>Seed: {{ session["seed"] }}</i></p>
 {% endblock %}

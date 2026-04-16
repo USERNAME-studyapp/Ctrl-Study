@@ -99,7 +99,7 @@ def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: l
 
     return questions
 
-def getQuestionForm(question: QuestionContainer) -> QuestionForm:
+def getQuestionForm(question: QuestionContainer, label: str = "Answers") -> QuestionForm:
 
     match question.type:
         case "multiple_choice":
@@ -109,7 +109,8 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 correct=question.correct,
                 feedback=question.feedback,
                 answerChoices=question.answer,
-                language=question.language
+                language=question.language,
+                prefix = label
             )
         case "multiple_select":
             form = CheckboxQuestionForm(
@@ -118,7 +119,8 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 correct=question.correct,
                 feedback=question.feedback,
                 answerChoices=question.answer,
-                language=question.language
+                language=question.language,
+                prefix=label
             )
         case "true_false":
             form = RadioQuestionForm(
@@ -127,7 +129,8 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 correct=question.correct,
                 feedback=question.feedback,
                 answerChoices=question.answer,
-                language=question.language
+                language=question.language,
+                prefix=label
             )
         case "short_answer":
             form = ShortAnswerQuestionForm(
@@ -135,7 +138,8 @@ def getQuestionForm(question: QuestionContainer) -> QuestionForm:
                 question=question.question,
                 correct=question.correct,
                 feedback=question.feedback,
-                language=question.language
+                language=question.language,
+                prefix=label
             )
         case _:
             raise ValueError("Unknown question type.")

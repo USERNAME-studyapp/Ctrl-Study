@@ -38,6 +38,7 @@ class QuestionForm(FlaskForm, Generic[T]):
     correct: list[str]
     feedback: str
     language: str
+    instructions: str
     answer: T
 
     def getCorrect(self) -> list[str]:
@@ -66,6 +67,7 @@ class RadioQuestionForm(QuestionForm[RadioField]):
     correct: list[str]
     feedback: str
     answer: RadioField = RadioField("Answers", validators=[InputRequired()])
+    instructions: str = "Choose one option."
     submit = SubmitField("Submit")
 
     def getCorrect(self) -> list[str]:
@@ -102,6 +104,7 @@ class CheckboxQuestionForm(QuestionForm[MultiCheckboxField]):
     correct: list[str]
     feedback: str
     answer: MultiCheckboxField = MultiCheckboxField("Answers", validators=[InputRequired()])
+    instructions: str = "Select all that apply."
     submit = SubmitField("Submit")
 
     def getCorrect(self) -> list[str]:
@@ -138,6 +141,7 @@ class ShortAnswerQuestionForm(QuestionForm[TextAreaField]):
     correct: list[str]
     feedback: str
     answer: TextAreaField = TextAreaField("Answers", validators=[DataRequired()], default=None)
+    instructions: str = "Type your answer below."
     submit = SubmitField("Submit")
 
     def __init__(
