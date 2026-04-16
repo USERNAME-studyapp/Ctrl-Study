@@ -226,6 +226,8 @@ def quiz():
         session.pop("progress")
     if "quizGivenAnswers" in session:
         session.pop("quizGivenAnswers")
+    if "correctness" in session:
+        session.pop("correctness")
     if form.validate_on_submit():
         print(form.tagSelection.data, form.questionTypes.data)
         t = form.tagSelection.data
