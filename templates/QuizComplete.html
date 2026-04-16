@@ -2,10 +2,10 @@
 
 <div class="clear_bordering" style="padding-left: 30px">
     <!-- text and scoring -->
-    <div style="margin-bottom: 50px; position: stick; text-align: center;">
+    <div style="margin-bottom: 50px; text-align: center;">
         <h1 style="font-family: monospace; margin-bottom: 10px;">Results</h1>
 
-        <div style="margin-bottom: 50px">
+        <div style="margin-bottom: 40px">
             <p>
                 You scored a <strong>{{ "%.2f"|format(correctPercent * 100) }} %</strong>
             </p>
@@ -13,7 +13,8 @@
     </div>
 
     <!-- section for quiz with results and feedback -->
-    <div class="clear_bordering" style="padding: 20px">
+    <div class="clear_bordering" style="padding-top:5px">
+        <hr style="margin-top: 20px;">
         {% for form in forms %}
         <h1>Question {{ loop.index }}</h1>
         <h3>{{ form.language }}</h3>
@@ -25,7 +26,7 @@
             <fieldset disabled>
                 {{ form.answer(style="list-style:none; white-space: pre-line;", class="answer") }}
             </fieldset>
-            <h3 style="color: {{ "green" if correctness[loop.index0] else "red" }}">{{ "Correct" if
+            <h3 style="color: {{ " green" if correctness[loop.index0] else "red" }}">{{ "Correct" if
                 correctness[loop.index0] else "Incorrect" }}</h3>
             <div class="slight_clear_bordering">
                 {% if correctness[loop.index0] == False %}
@@ -38,7 +39,7 @@
                 {% endif %}
                 <p>{{ form.feedback }}</p>
             </div>
-            <hr>
+            <hr style="margin-top: 45px;">
             {% endfor %}
     </div>
 </div>
