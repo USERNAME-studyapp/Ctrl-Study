@@ -36,10 +36,12 @@
   <form method="post">
     <div style="display: flex; gap: 16px; align-items: flex-start;">
       <div>
+        <!-- question name -->
         <div class="text_spacing">
           <label for="question_name">Question Name</label><br />
         </div>
         <input id="question_name" name="question_name" type="text" size="60" value="{{ question_name }}" /><br /><br />
+        <!-- prompt -->
         <div class="text_spacing">
           <label for="prompt_text">Prompt</label><br />
         </div>
@@ -47,6 +49,7 @@
 
         <div style="display: flex; gap: 16px; align-items: flex-start;">
           <div>
+            <!-- tags -->
             <div class="text_spacing">
               <label>Tags</label><br />
             </div>
@@ -63,6 +66,7 @@
 
           <div style="display: flex; flex-direction: column; gap: 16px;">
             <div>
+              <!-- question type -->
               <div class="text_spacing">
                 <label for="question_type">Question Type</label><br />
               </div>
@@ -77,6 +81,7 @@
               </select>
             </div>
             <div>
+              <!-- language -->
               <div class="text_spacing">
                 <label for="language">Language</label><br />
               </div>
@@ -88,11 +93,13 @@
           </div>
         </div><br /><br />
 
+        <!-- template input -->
         <div class="text_spacing">
           <label for="template_text">Template Input</label><br />
         </div>
         <textarea id="template_text" name="template_text" rows="24" cols="75">{{ template_text }}</textarea><br /><br />
 
+        <!-- feedback -->
         <div class="text_spacing">
           <label for="feedback_text">Feedback</label><br />
         </div>
@@ -100,12 +107,14 @@
 
         <input type="hidden" name="selected_question_id" value="{{ selected_question_id }}" />
 
+        <!-- buttons -->
         <button type="submit" name="action" value="preview">Preview</button>
         <button type="submit" name="action" value="save">Save</button>
         <button type="submit" name="action" value="new">New Question</button>
       </div>
 
       <div style="margin-left: 20px">
+        <!-- saved questions -->
         <div class="text_spacing">
           <label for="chosen_question_id">Saved Questions</label><br />
         </div>
@@ -116,6 +125,7 @@
           {% endfor %}
         </select><br /><br />
 
+        <!-- buttons -->
         <button type="submit" name="action" value="load">Load Selected</button>
         <button type="submit" name="action" value="delete">Delete Selected</button>
       </div>
@@ -123,6 +133,8 @@
   </form>
 
 </div>
+
+<!-- preview output -->
 <div class="clear_bordering_out_box" style="text-align: center;">
   <h2>Preview Output</h2>
   <textarea rows="20" cols="90" readonly style="max-width: 95%;

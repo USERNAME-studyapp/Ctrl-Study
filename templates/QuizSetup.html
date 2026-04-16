@@ -6,6 +6,7 @@
             <form method="post">
                 {{ form.hidden_tag() }}
                 <div class="container">
+                    <!-- select question type -->
                     <div class="column">
                         <h3 style="font-size: 23px;">Select Question Types</h3>
                         <div class="clear_bordering_fixed" style="margin-top:25px; margin-bottom: 45px;">
@@ -13,6 +14,8 @@
                         </div>
                         <button type="button" id="select-all-questionTypes">Toggle All Question Types</button>
                     </div>
+
+                    <!-- select tags -->
                     <div class="column">
                         <h3 style="font-size: 23px;">Select Tags</h3>
                         <div class="clear_bordering_fixed">
@@ -20,6 +23,8 @@
                         </div>
                         <button type="button" id="select-all-tags">Toggle All Tags</button>
                     </div>
+
+                    <!-- select languages -->
                     <div class="column">
                         <h3 style="font-size: 23px;">Select Languages</h3>
                         <div class="clear_bordering_fixed" style="margin-top:45px; margin-bottom: 65px;">
@@ -29,10 +34,13 @@
                     </div>
                 </div>
                 <div class="container h-aligning" style="margin-top: 25px">
+                    <!-- question count -->
                     <div class="column">
                         <h3 style="font-size: 23px;">Question Count</h3>
                         {{ form.questionCount }}
                     </div>
+
+                    <!-- seed -->
                     <div class="column">
                         <h3 style="font-size: 23px;">Seed</h3>
                         {{ form.seed }}
