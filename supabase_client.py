@@ -222,7 +222,7 @@ def FetchFilteredQuestions(tags: list[str], questionTypes: list[str], languages:
 
     if fetchError:
         raise RuntimeError(f"Supabase fetch failed: {fetchError}")
-    
+
     data = getattr(response, "data", None)
     if isinstance(data, list):
         # apparently set() is specific for uniqueness
@@ -251,6 +251,61 @@ def FetchAllTags() -> list[dict[str, Any]]:
         return data
 
     return []
+
+# ================ FetchUsedTags: FETCH ALL TAGS FROM "tags" TABLE, and compare with tags present in question_tags ================
+def FetchUsedTags() -> list[dict[str, Any]]:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    usedTagsResponse = retryQuery(lambda: ctrlDB.table("question_tags").select("tag_id").order("tag_id").execute())
+    fetchError = getattr(usedTagsResponse, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+    usedTags = getattr(usedTagsResponse, "data", None)
+    if not isinstance(usedTags, list):
+        return []
+
+    response = retryQuery(lambda: ctrlDB.table("tags").select("id,name,category").order("id").execute())
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+
+    allTags = getattr(response, "data", None)
+    if not isinstance(allTags, list):
+        return []
+
+    unique_ids = {d['tag_id'] for d in usedTags}
+    filtered_tags = [tag for tag in allTags if tag['id'] in unique_ids]
+
+    return filtered_tags
+
+# ================ FetchUsedTags: FETCH ALL TAGS FROM "tags" TABLE, and compare with tags present in question_tags ================
+def FetchAllQuestionTypes() -> list[dict[str, Any]]:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+
+    usedTagsResponse = retryQuery(lambda: ctrlDB.table("question_tags").select("tag_id").order("tag_id").execute())
+    fetchError = getattr(usedTagsResponse, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+    usedTags = getattr(usedTagsResponse, "data", None)
+    if not isinstance(usedTags, list):
+        return []
+
+    response = retryQuery(lambda: ctrlDB.table("tags").select("id,name,category").order("id").execute())
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+
+    allTags = getattr(response, "data", None)
+    if not isinstance(allTags, list):
+        return []
+
+    unique_ids = {d['tag_id'] for d in usedTags}
+    filtered_tags = [tag for tag in allTags if tag['id'] in unique_ids]
+
+    return filtered_tags
+
 
 # ================ FetchTagIdsForQuestion: FETCH TAG IDS FOR A QUESTION ================
 def FetchTagIdsForQuestion(questionId: int) -> list[int]:
@@ -308,7 +363,7 @@ def AuthenticateUser(username: str, raw_password: str) -> User | None:
     data = getattr(response, "data", None)
     if not isinstance(data, list) or not data:
         return None
-    
+
     row = data[0]
     stored_hash = row.get("password_hash")
     if not isinstance(stored_hash, str) or not stored_hash:

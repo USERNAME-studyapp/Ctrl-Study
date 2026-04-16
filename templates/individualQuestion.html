@@ -15,7 +15,7 @@
     <div style="width: fit-content; tab-size: 4">{{ form.format_html()|safe }}</div>
     <form style="tab-size: 4" action="" method="post" novalidate>
         {{ form.hidden_tag() }}
-        <p>{{ form.instructions }}</p>
+        <p><b>{{ form.instructions }}</b></p>
         <fieldset {{ "disabled" if showingAnswer }}>
             {{ form.answer(style="list-style:none; white-space: pre-line;", class="answer") }}
         </fieldset>
