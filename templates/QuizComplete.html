@@ -7,7 +7,7 @@
 
         <div style="margin-bottom: 50px">
             <p>
-                You scored a <strong>{{ correctPercent * 100 }} %</strong>
+                You scored a <strong>{{ "%.2f"|format(correctPercent * 100) }} %</strong>
             </p>
         </div>
     </div>
@@ -25,7 +25,7 @@
             <fieldset disabled>
                 {{ form.answer(style="list-style:none; white-space: pre-line;", class="answer") }}
             </fieldset>
-            <h3 style="color: {{ " green" if correctness[loop.index0] else "red" }}">{{ "Correct" if
+            <h3 style="color: {{ "green" if correctness[loop.index0] else "red" }}">{{ "Correct" if
                 correctness[loop.index0] else "Incorrect" }}</h3>
             <div class="slight_clear_bordering">
                 {% if correctness[loop.index0] == False %}
