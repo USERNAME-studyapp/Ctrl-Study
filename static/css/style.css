@@ -27,7 +27,8 @@
         font-size: 45px !important;
     }
 
-    .column {
+    .column,
+    .column_left {
         flex: 1 1 100%;
     }
 }
@@ -232,6 +233,14 @@ button:hover,
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.column_left {
+    flex: 1 1 300px;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
 }
 
 /* horizontal centering */
