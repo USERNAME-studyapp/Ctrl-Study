@@ -7,14 +7,39 @@
 
         <div style="margin-bottom: 50px; text-align: left;">
             <p>
-                You scored a <strong>blank %</strong>
+                You scored a <strong>{{ correctPercent * 100 }} %</strong>
             </p>
         </div>
     </div>
 
     <!-- section for quiz with results and feedback -->
     <div class="clear_bordering column" style="padding: 20px">
-        text
+        {% for form in forms %}
+        <h1>Question</h1>
+        <h3>{{ form.language }}</h3>
+        <p><b>{{ form.prompt }}</b></p>
+        <div style="width: fit-content; tab-size: 4">{{ form.format_html()|safe }}</div>
+        <form style="tab-size: 4" action="" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <p><b>You answered:</b></p>
+            <fieldset disabled>
+                {{ form.answer(style="list-style:none; white-space: pre-line;", class="answer") }}
+            </fieldset>
+            <h3 style="color: {{ "green" if correctness[loop.index0] else "red" }}">{{ "Correct" if correctness[loop.index0] else "Incorrect"  }}</h3>
+            <div class="slight_clear_bordering">
+                {% if correctness[loop.index0] == False %}
+                <p><i>The correct answer was:</i></p>
+                <ul>
+                    {% for val in form.getCorrect() %}
+                    <li style="white-space: pre-line;">{{ val }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <p>{{ form.feedback }}</p>
+            </div>
+        {% endfor %}
     </div>
 </div>
+
+<p style="color: grey; text-align: center;"><i>Seed: {{ session["seed"] }}</i></p>
 {% endblock %}
