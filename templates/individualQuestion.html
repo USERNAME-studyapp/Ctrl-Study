@@ -34,9 +34,52 @@
         </div>
         <button type="submit" name="action" value="next">Next</button>
         {% else %}
-        <button type="submit" name="action" value="submit">Submit</button>
+        <button type="submit" name="action" value="submit" id="submit-btn" disabled>Submit</button>
         {% endif %}
     </form>
 </div>
 
+<script>
+    const submitBtn = document.getElementById('submit-btn');
+    const fieldset = submitBtn?.closest('form').querySelector('fieldset');
+
+    // grey out the submit button if no data entered
+    function checkAnswer() {
+        if (!submitBtn) return;
+
+        const inputs = fieldset.querySelectorAll('input, textarea, select');
+        let answered = false;
+
+        for (const input of inputs) {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                if (input.checked) { answered = true; break; }
+            } else if (input.value.trim() !== '') {
+                answered = true; break;
+            }
+        }
+
+        submitBtn.disabled = !answered;
+    }
+
+    if (fieldset) {
+        fieldset.addEventListener('input', checkAnswer);
+        fieldset.addEventListener('change', checkAnswer);
+        checkAnswer();
+    }
+
+    // Keep scroll position between submits!
+    document.addEventListener("DOMContentLoaded", function () {
+        const scrollPos = sessionStorage.getItem("scrollPos");
+        if (scrollPos) {
+            window.scrollTo(0, parseInt(scrollPos));
+            sessionStorage.removeItem("scrollPos");
+        }
+
+        document.querySelectorAll("form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                sessionStorage.setItem("scrollPos", window.scrollY);
+            });
+        });
+    });
+</script>
 {% endblock %}

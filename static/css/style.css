@@ -354,3 +354,14 @@ textarea.answer {
     background-color: none;
     color: CanvasText;
 }
+
+
+/* submit button styling  */
+
+#submit-btn:disabled {
+    opacity: 0.5;
+}
+
+#submit-btn {
+    transition: opacity 0.1s;
+}

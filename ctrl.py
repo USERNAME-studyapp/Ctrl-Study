@@ -151,10 +151,11 @@ def question():
     if "progress" not in session:
         session["progress"] = 0
     if "correctness" not in session:
-        session["correctness"] = dict[int, bool]()
+        session["correctness"] = {}
+    if "quizGivenAnswers" not in session:
+        session["quizGivenAnswers"] = {}
     if session["progress"] >= len(session["quizQuestions"]):
         return redirect(url_for("quizComplete"))
-
     if "SingleQuestionState" not in session:
         session["SingleQuestionState"] = "NewQuestion"
     elif session["SingleQuestionState"] == "ToNewQuestion":
@@ -162,60 +163,48 @@ def question():
 
     question = session["quizQuestions"][session["progress"]]
     form = QuestionFetch.getQuestionForm(question)
-    status: str = "Please answer the question."
-    state = session["SingleQuestionState"]
 
+    # STATE MACHINE
     if request.method == "POST":
         action = request.form.get("action")
-
-        if action == "next" and state == "Answered":
+        if action == "next" and session["SingleQuestionState"] == "Answered":
             session["progress"] += 1
             session["SingleQuestionState"] = "ToNewQuestion"
             session.modified = True
             return redirect(url_for("question"))
+        if action == "submit" and session["SingleQuestionState"] == "NewQuestion" and form.validate_on_submit():
+            correct = form.correct
+            answers = form.answer.data
+            if not isinstance(answers, list):
+                answers = [answers]
+            answers = [answer.replace('\r\n', '\n') for answer in answers]
+            isCorrect = set(answers) == set(correct)
+            session["quizGivenAnswers"][session["progress"]] = answers
+            session["correctness"][session["progress"]] = isCorrect
+            session["SingleQuestionState"] = "Answered"
+            session.modified = True
 
-        if action == "submit" and form.validate_on_submit():
-            if state == "NewQuestion":
-                session["SingleQuestionState"] = "Answered"
-                session.modified = True
-
-                correct = form.correct
-                answers = form.answer.data
-
-                if not isinstance(answers, list):
-                    answers = [answers]
-
-                answers = [answer.replace('\r\n', '\n') for answer in answers]
-
-                if "quizGivenAnswers" not in session:
-                    session["quizGivenAnswers"] = dict[int, list]()
-                session["quizGivenAnswers"][session["progress"]] = answers
-
-                isCorrect = True if set(answers) == set(correct) else False
-
-                session["correctness"][session["progress"]] = True if isCorrect else False
-
-                status = "Correct" if isCorrect else "Incorrect"
-
-                return render_template(
-                    "individualQuestion.html",
-                    title="Question",
-                    form=form,
-                    status=status,
-                    showingAnswer=True,
-                    currentQuestion=session["progress"] + 1,
-                    totalQuestions=len(session["quizQuestions"]),
-                )
-
-    return render_template(
-        "individualQuestion.html",
-        title="Question",
-        form=form,
-        status=status,
-        showingAnswer=False,
-        currentQuestion=session["progress"] + 1,
-        totalQuestions=len(session["quizQuestions"]),
-    )
+    if session["SingleQuestionState"] == "Answered":
+        isCorrect = session["correctness"].get(session["progress"], False)
+        return render_template(
+            "individualQuestion.html",
+            title="Question",
+            form=form,
+            status="Correct" if isCorrect else "Incorrect",
+            showingAnswer=True,
+            currentQuestion=session["progress"] + 1,
+            totalQuestions=len(session["quizQuestions"]),
+        )
+    else:
+        return render_template(
+            "individualQuestion.html",
+            title="Question",
+            form=form,
+            status="Please answer the question.",
+            showingAnswer=False,
+            currentQuestion=session["progress"] + 1,
+            totalQuestions=len(session["quizQuestions"]),
+        )
 
 
 @app.route("/quiz", methods=["GET", "POST"])
