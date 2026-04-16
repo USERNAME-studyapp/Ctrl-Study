@@ -19,7 +19,7 @@ from datetime import timedelta
 from flask_session import Session
 
 from flask import redirect, url_for
-from flask_login import LoginManager, login_required, login_user, current_user
+from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 
 import supabase_client
 import template_builder
@@ -86,6 +86,12 @@ def login():
 
     return render_template("Login.html", title="Ctrl-Study: Login", form=form, error=error)
 
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("home"))
+
 @app.route("/template", methods=["GET", "POST"])
 @login_required
 def templateIndex():
@@ -93,6 +99,7 @@ def templateIndex():
     if getattr(current_user, "role", None) != "admin":
         return redirect(url_for("home"))
     return template_builder.templateIndex()
+
 
 @app.route("/quiz-complete", methods=["GET"])
 def quizComplete():

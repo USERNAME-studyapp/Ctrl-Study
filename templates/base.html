@@ -18,6 +18,9 @@
         <div style="margin-bottom: 15px; top:0; margin: 8px;">
             <strong>Ctrl Study</strong> |
             <a href="/" class="btn">Home</a>
+            {% if current_user.is_authenticated %}
+            <a href="/logout" class="btn">Logout</a>
+            {% endif %}
             {% block headerbar %}
             {% endblock %}
         </div>
