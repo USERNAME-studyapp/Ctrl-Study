@@ -26,12 +26,25 @@ import template_builder
 
 from Frontend.QuestionFetch import QuestionContainer, makeSeed
 
+import os
+
 import shutil
 cache_path = "./flask_session_cache"
 try:
     shutil.rmtree(cache_path)
 except FileNotFoundError:
     pass
+
+# essential startup component
+if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+    print(r"""
+    ____ _____ ____  _         ____ _____ _   _ ______   __
+   / ___|_   _|  _ \| |       / ___|_   _| | | |  _ \ \ / /
+  | |     | | | |_) | |   ____\___ \ | | | | | | | | \ V /
+  | |___  | | |  _ <| |__|_____|__) || | | |_| | |_| || |
+   \____| |_| |_| \_\_____|   |____/ |_|  \___/|____/ |_|
+    """)
+# end essential startup component
 
 # app is the Flask application instance
 app = Flask(__name__)
@@ -100,6 +113,9 @@ def templateIndex():
         return redirect(url_for("home"))
     return template_builder.templateIndex()
 
+@app.route("/credits", methods=["GET"])
+def credits():
+    return render_template("credits.html", title="Ctrl-Study: Credits")
 
 @app.route("/quiz-complete", methods=["GET"])
 def quizComplete():
@@ -122,8 +138,6 @@ def quizComplete():
     for index, question in enumerate(session["quizQuestions"]):
         form = QuestionFetch.getQuestionForm(question, label=f"Answers{index}")
         data: list = session["quizGivenAnswers"][session["quizQuestions"].index(question)]
-        print(data)
-        print(form)
         if isinstance(form, RadioQuestionForm) or isinstance(form, ShortAnswerQuestionForm):
             form.answer.data = data[0]
         else:

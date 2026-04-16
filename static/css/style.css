@@ -91,6 +91,7 @@ fieldset {
     position: sticky;
     top: 0;
     backdrop-filter: blur(10px);
+    background-color: rgba(46, 46, 46, 0.8);
 }
 
 /* BORDERS */
@@ -331,15 +332,8 @@ ul.answer li:has(input:checked) {
 }
 
 ul.answer li:has(input:disabled) {
-    cursor: not-allowed;
     pointer-events: none;
-    border-color: #5a5a5a;
-    color: #6a6a6a;
-    background-color: transparent;
-}
-
-ul.answer li:has(input:disabled):has(input:checked) {
-    background-color: #3a3d3e;
+    opacity: 0.5;
 }
 
 /* feeble attempt */

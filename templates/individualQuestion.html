@@ -38,6 +38,18 @@
         {% endif %}
     </form>
 </div>
+{% if current_user.is_authenticated and current_user.username == "ctrl_admin" %}
+<div style="color: grey; text-align: center;">
+    <p>
+        Admin auth'd. Here's some debug info.
+        <br>Seed: {{ session["seed"] }}
+        <br>Title: {{ session["quizQuestions"][currentQuestion-1].title }}
+        <br>Question container: <code>{{ session["quizQuestions"][currentQuestion-1] }}</code>
+        <br>Question form answer state: <code>{{ form.data }}</code>
+    </p>
+</div>
+
+{% endif %}
 
 <script>
     const submitBtn = document.getElementById('submit-btn');

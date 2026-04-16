@@ -25,8 +25,9 @@ class QuestionContainer:
     answer: list[str]
     type: str
     language: str
+    title: str
 
-    def __init__(self, prompt: str, question: str, correct: list[str], feedback: str, answer: list[str], type: str, language: str):
+    def __init__(self, prompt: str, question: str, correct: list[str], feedback: str, answer: list[str], type: str, language: str, title: str):
         self.prompt = prompt
         self.question = question
         self.correct = correct
@@ -34,6 +35,7 @@ class QuestionContainer:
         self.answer = answer
         self.type = type
         self.language = language
+        self.title = title
 
     def __hash__(self):
         return hash(
@@ -64,7 +66,8 @@ def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: l
                     "template": c["prompt_template"],
                     "prompt": c["question_template"],
                     "feedback": c["feedback_template"],
-                    "language": c["language"]
+                    "language": c["language"],
+                    "title": c["title"],
                 })
 
         return questions
@@ -81,11 +84,15 @@ def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: l
 
     questions = []
 
+    random.seed(seed)
+    print("individual question seeds as follows:")
     for qu in q:
+        randNum = random.randrange(sys.maxsize)
+        print(randNum)
         gq = generateQuestion(
-            templateText=qu["template"], promptText=qu["prompt"], feedbackText=qu["feedback"], seed=seed
+            templateText=qu["template"], promptText=qu["prompt"], feedbackText=qu["feedback"], seed=randNum
         )
-        gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]], seed=seed)
+        gq["answers"] = shuffleAnswers([*gq["incorrect"], *gq["answer"]], seed=randNum)
         gq["type"] = qu["type"]
         questions.append(QuestionContainer(
             prompt=gq["prompt"],
@@ -94,7 +101,8 @@ def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: l
             feedback=gq["feedback"],
             answer=gq["answers"],
             type=gq["type"],
-            language=qu["language"]
+            language=qu["language"],
+            title=qu["title"]
         ))
 
     return questions
