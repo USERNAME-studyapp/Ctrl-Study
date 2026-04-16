@@ -15,7 +15,7 @@
     <!-- section for quiz with results and feedback -->
     <div class="clear_bordering" style="padding: 20px">
         {% for form in forms %}
-        <h1>Question</h1>
+        <h1>Question {{ loop.index }}</h1>
         <h3>{{ form.language }}</h3>
         <p><b>{{ form.prompt }}</b></p>
         <div style="width: fit-content; tab-size: 4">{{ form.format_html()|safe }}</div>
