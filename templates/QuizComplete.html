@@ -1,11 +1,11 @@
 {% extends "base.html" %} {% block body %}
 
-<div class="clear_bordering container" style="padding-left: 30px">
+<div class="clear_bordering" style="padding-left: 30px">
     <!-- text and scoring -->
-    <div class="column v-aligning" style="margin-bottom: 200px">
+    <div style="margin-bottom: 50px; position: stick; text-align: center;">
         <h1 style="font-family: monospace; margin-bottom: 10px;">Results</h1>
 
-        <div style="margin-bottom: 50px; text-align: left;">
+        <div style="margin-bottom: 50px">
             <p>
                 You scored a <strong>{{ correctPercent * 100 }} %</strong>
             </p>
@@ -13,7 +13,7 @@
     </div>
 
     <!-- section for quiz with results and feedback -->
-    <div class="clear_bordering column" style="padding: 20px">
+    <div class="clear_bordering" style="padding: 20px">
         {% for form in forms %}
         <h1>Question</h1>
         <h3>{{ form.language }}</h3>
@@ -25,7 +25,8 @@
             <fieldset disabled>
                 {{ form.answer(style="list-style:none; white-space: pre-line;", class="answer") }}
             </fieldset>
-            <h3 style="color: {{ "green" if correctness[loop.index0] else "red" }}">{{ "Correct" if correctness[loop.index0] else "Incorrect"  }}</h3>
+            <h3 style="color: {{ " green" if correctness[loop.index0] else "red" }}">{{ "Correct" if
+                correctness[loop.index0] else "Incorrect" }}</h3>
             <div class="slight_clear_bordering">
                 {% if correctness[loop.index0] == False %}
                 <p><i>The correct answer was:</i></p>
@@ -37,7 +38,7 @@
                 {% endif %}
                 <p>{{ form.feedback }}</p>
             </div>
-        {% endfor %}
+            {% endfor %}
     </div>
 </div>
 
