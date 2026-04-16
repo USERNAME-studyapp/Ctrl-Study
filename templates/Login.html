@@ -4,18 +4,25 @@
 {% if error %}
 <p>{{ error }}</p>
 {% endif %}
-<form method="POST" action="">
-    {{ form.hidden_tag() }}
-    <div>
-        {{ form.username.label }}
-        {{ form.username() }}
-    </div>
-    <div>
-        {{ form.password.label }}
-        {{ form.password() }}
-    </div>
-    <div>
-        {{ form.submit() }}
-    </div>
-</form>
+<div style="display: flex; flex-direction: column; align-items: center; padding-top: 20vh;">
+    <h1 style="text-align: center; font-size: 50px; font-family: monospace; margin-bottom: 10px;">Proctor Login</h1>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="clear_bordering" style="padding: 15px 30px;">
+            <div style="margin-bottom: 10px;">
+                <h3 style="font-size: 23px;">{{ form.username.label }}</h3>
+                {{ form.username() }}
+            </div>
+            <div style="margin-bottom: 10px;">
+                <h3 style="font-size: 23px;">{{ form.password.label }}</h3>
+                {{ form.password() }}
+            </div>
+        </div>
+        <br>
+        <hr>
+        <div style="text-align: center; margin: 20px;">
+            {{ form.submit(class="btn") }}
+        </div>
+    </form>
+</div>
 {% endblock %}
