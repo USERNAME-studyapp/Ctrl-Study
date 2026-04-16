@@ -19,7 +19,7 @@
         <h3>{{ form.language }}</h3>
         <p><b>{{ form.prompt }}</b></p>
         <div style="width: fit-content; tab-size: 4">{{ form.format_html()|safe }}</div>
-        <form style="tab-size: 4" action="" method="post" novalidate>
+        <form style="tab-size: 4" action="" novalidate>
             {{ form.hidden_tag() }}
             <p><b>You answered:</b></p>
             <fieldset disabled>
@@ -38,6 +38,7 @@
                 {% endif %}
                 <p>{{ form.feedback }}</p>
             </div>
+            <hr>
             {% endfor %}
     </div>
 </div>

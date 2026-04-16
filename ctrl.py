@@ -109,7 +109,7 @@ def quizComplete():
         print("no correctness huh")
         return redirect(url_for("quiz"))
 
-    correctPercent = len([correct for correct in session["correctness"] if correct]) / len(session["quizQuestions"])
+    correctPercent = len([value for key, value in session["correctness"].items() if value]) / len(session["quizQuestions"])
 
     forms = list[QuestionForm]()
     for index, question in enumerate(session["quizQuestions"]):
