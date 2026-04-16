@@ -4,7 +4,10 @@
 }
 
 :root {
-    color-scheme: light dark;
+    /* we support light mode, technically, but the colors are not relative as-is
+    it is better to support what we have all been using apparently.
+    color-scheme: light dark;*/
+    color-scheme: dark;
 }
 
 /* light mode */
@@ -297,7 +300,7 @@ ul.answer li {
     border-radius: 5px;
     text-decoration: none;
     background-color: none;
-    color: white;
+    color: CanvasText;
     position: relative;
 }
 
@@ -350,5 +353,5 @@ textarea.answer {
     border-radius: 5px;
     text-decoration: none;
     background-color: none;
-    color: white;
+    color: CanvasText;
 }
