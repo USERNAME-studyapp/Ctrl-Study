@@ -44,6 +44,8 @@ combinations("{{ x }} {{ y }}", out1, out2, out3, out4)
 
 
 # formatPreview converts generated payload into readable textarea output
+# When Preview is pressed and question is generated, just give that here so the it can be formatted for preview.
+# Honestly, should probably change this and builder.html to preview how it's going to actually look like in the inidividualQuestion.html
 def formatPreview(payload: dict[str, Any]) -> str:
     # Pulls prompt text if present
     prompt = payload.get("prompt", "")
@@ -82,6 +84,7 @@ def parseQuestionId(rawId: str) -> int | None:
         return None
 
 
+# We gotta initialize the default state of the page
 def defaultState() -> dict[str, Any]:
     return {
         "templateText": defaultTemplate,
@@ -96,7 +99,8 @@ def defaultState() -> dict[str, Any]:
         "statusMessage": "",
     }
 
-
+# “Resume where you left off” helper after a redirect
+# Store the whole page state in the session, and this safely copies it back into `state` so the builder form repopulates
 def applyRestoredState(state: dict[str, Any], restoredState: Any) -> None:
     if not isinstance(restoredState, dict):
         return
@@ -116,7 +120,8 @@ def applyRestoredState(state: dict[str, Any], restoredState: Any) -> None:
     state["previewOutput"] = str(restoredState.get("previewOutput", state["previewOutput"]))
     state["statusMessage"] = str(restoredState.get("statusMessage", state["statusMessage"]))
 
-
+# This is how the page form gets read
+# It also returns (action, chosenQuestionId, selectedQuestionIdValue) so the route can decide what to do with proper context
 def readFormIntoState(state: dict[str, Any]) -> tuple[str, str, int | None]:
     state["templateText"] = request.form.get("template_text", "")
     state["promptText"] = request.form.get("prompt_text", "")
@@ -135,7 +140,8 @@ def readFormIntoState(state: dict[str, Any]) -> tuple[str, str, int | None]:
 
     return action, chosenQuestionId, selectedQuestionIdValue
 
-
+# So if the POST was to load, they need that chosen question id value
+# Use supabase_client functions to get question and populate the form with the info
 def handleLoad(state: dict[str, Any], chosenQuestionId: str) -> None:
     chosenIdValue = parseQuestionId(chosenQuestionId)
     if chosenIdValue is None:
@@ -162,7 +168,8 @@ def handleLoad(state: dict[str, Any], chosenQuestionId: str) -> None:
     except Exception as exc:
         state["statusMessage"] = f"Load failed: {exc}"
 
-
+# If POST was to delete, we still need the chosen id value
+# Use DeleteQuestion from db client
 def handleDelete(state: dict[str, Any], chosenQuestionId: str) -> None:
     chosenIdValue = parseQuestionId(chosenQuestionId)
     if chosenIdValue is None:
@@ -176,12 +183,13 @@ def handleDelete(state: dict[str, Any], chosenQuestionId: str) -> None:
     except Exception as exc:
         state["statusMessage"] = f"Delete failed: {exc}"
 
-
+# If POST was to make new question, just do the default thing again
 def handleNew(state: dict[str, Any]) -> None:
     state.update(defaultState())
     state["statusMessage"] = "Ready for a new question."
 
-
+# Runs the parser to generate a preview (and see if error) so users can see what the question would look like
+# If the action is “save”, this also decides between “create new” vs “update existing” based on whether a question id is selected
 def handleGenerate(action: str, state: dict[str, Any], selectedQuestionIdValue: int | None) -> None:
     try:
         payload = generateQuestion(
@@ -229,7 +237,9 @@ def handleGenerate(action: str, state: dict[str, Any], selectedQuestionIdValue: 
         state["statusMessage"] = "Generation failed."
 
 
-# index handles page load and all form actions
+# Index handles page load and all form actions
+# Main builder page controller: handles initial page load (GET) and all button actions (POST)
+# Uses POST-redirect-GET with `session["pageState"]` so refreshing the page doesn’t re-submit the form and accidentally and cause anguish
 def templateIndex():
     state = defaultState()
 
