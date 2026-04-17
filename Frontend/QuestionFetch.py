@@ -47,7 +47,8 @@ class QuestionContainer:
 
 def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: list[str] = [], languages: list[str] = []) -> list[QuestionContainer] | None:
     def getDbQuestions() -> list[dict[str, str]] | None:
-        print(f"Fetching question with tags: {tags} and types: {types}")
+        #print(f"Fetching question with tags: {tags} and types: {types} and languages: {languages}")
+        print(f"Using seed {seed}")
         options = supabase_client.FetchFilteredQuestions(tags=tags, questionTypes=types, languages=languages)
         print(f"Got question ids: {options}")
         if not options:
@@ -56,11 +57,10 @@ def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: l
         questions = []
 
         random.seed(seed)
-        for _ in range(count):
-            questionID = choice(options)
-            c = supabase_client.FetchQuestionById(questionID)
-            if c is None:
-                raise ValueError("Question not found.")
+        ids = [choice(options) for _ in range(count)]
+        print(f"Using question ids: {ids}")
+        qs = supabase_client.FetchQuestionsByIds(ids)
+        for c in qs:
             questions.append({
                     "type": c["question_type"],
                     "template": c["prompt_template"],
@@ -85,7 +85,7 @@ def getRandomQuestions(seed: int, count: int = 1, tags: list[str] = [], types: l
     questions = []
 
     random.seed(seed)
-    print("individual question seeds as follows:")
+    print("Generating questions, seeds:")
     for qu in q:
         randNum = random.randrange(sys.maxsize)
         print(randNum)

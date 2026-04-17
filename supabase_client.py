@@ -82,6 +82,32 @@ def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
 
     return None
 
+# ================ FetchQuestionById: FETCH MULTIPLE QUESTIONS BY IDS FROM "questions" TABLE ================
+def FetchQuestionsByIds(questionIds: list[int]) -> list[dict[str, Any]]:
+    if not url or not key:
+        raise RuntimeError("Supabase credentials are missing.")
+    if not questionIds:
+        return []
+
+    uniqueIds = list(dict.fromkeys(questionIds))
+
+    response = retryQuery(
+        lambda: ctrlDB.table("questions")
+        # TEMP: DB columns are swapped. TODO: swap back to prompt_template, question_template once fixed.
+        .select("id,title,question_template,prompt_template,feedback_template,question_type,language")
+        .in_("id", uniqueIds)
+        .execute()
+    )
+    fetchError = getattr(response, "error", None)
+    if fetchError:
+        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
+    data = getattr(response, "data", None)
+    if not isinstance(data, list):
+        return []
+
+    questionMap = {q["id"]: q for q in data}
+    return [questionMap[qId] for qId in questionIds if qId in questionMap]
+
 # ================ SaveQuestion: SAVE QUESTION TO "questions" TABLE IN DATABASE ================
 def SaveQuestion(
     title: str,

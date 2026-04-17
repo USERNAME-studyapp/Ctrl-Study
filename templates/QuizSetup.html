@@ -56,27 +56,30 @@
     </form>
 
     <script>
+    function toggleCheckboxes(query) {
+        var checkboxes = document.querySelectorAll(query);
+        var toggle = (checkboxes[0].checked == true) ? false : true;
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = toggle;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('select-all-questionTypes').addEventListener('click', function (event) {
-            const checkboxes = document.querySelectorAll('input[name="questionTypes"]');
-            var toggle = (checkboxes[0].checked == true) ? false : true;
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = toggle;
-            });
+            toggleCheckboxes('input[name="questionTypes"]');
         });
         document.getElementById('select-all-tags').addEventListener('click', function (event) {
-            const checkboxes = document.querySelectorAll('input[name="tagSelection"]');
-            var toggle = (checkboxes[0].checked == true) ? false : true;
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = toggle;
-            });
+            toggleCheckboxes('input[name="tagSelection"]');
         });
         document.getElementById('select-all-languages').addEventListener('click', function (event) {
-            const checkboxes = document.querySelectorAll('input[name="languageSelection"]');
-            var toggle = (checkboxes[0].checked == true) ? false : true;
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = toggle;
-            });
+            toggleCheckboxes('input[name="languageSelection"]');
         });
+
+        toggleCheckboxes('input[name="questionTypes"]');
+        toggleCheckboxes('input[name="tagSelection"]');
+        toggleCheckboxes('input[name="languageSelection"]');
+
+    });
     </script>
 </div>
 

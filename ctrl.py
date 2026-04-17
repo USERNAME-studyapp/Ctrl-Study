@@ -24,6 +24,8 @@ from flask_login import LoginManager, login_required, login_user, current_user, 
 import supabase_client
 import template_builder
 
+from urllib.parse import urlencode
+
 from Frontend.QuestionFetch import QuestionContainer, makeSeed
 
 import os
@@ -132,20 +134,19 @@ def quizComplete():
         print("no correctness huh")
         return redirect(url_for("quiz"))
 
-    correctPercent = len([value for key, value in session["correctness"].items() if value]) / len(session["quizQuestions"])
+    correctPercent = sum(1 for v in session["correctness"].values() if v) / len(session["quizQuestions"])
 
     forms = list[QuestionForm]()
     for index, question in enumerate(session["quizQuestions"]):
         form = QuestionFetch.getQuestionForm(question, label=f"Answers{index}")
-        data: list = session["quizGivenAnswers"][session["quizQuestions"].index(question)]
+        data: list = [session["quizGivenAnswers"][index] for index, question in enumerate(session["quizQuestions"])]
         if isinstance(form, RadioQuestionForm) or isinstance(form, ShortAnswerQuestionForm):
             form.answer.data = data[0]
         else:
             form.answer.data = data
         forms.append(form)
 
-    print(session["correctness"])
-
+    url = "/quiz?" + urlencode(session["quizParameters"], doseq=True)
 
     return render_template (
         "QuizComplete.html",
@@ -154,7 +155,8 @@ def quizComplete():
         givenAnswers = session["quizGivenAnswers"],
         correctness = session["correctness"],
         forms = forms,
-        correctPercent = correctPercent
+        correctPercent = correctPercent,
+        retakeQuizURL = url
     )
 
 @app.route("/question", methods=["GET", "POST"])
@@ -175,28 +177,29 @@ def question():
     elif session["SingleQuestionState"] == "ToNewQuestion":
         session["SingleQuestionState"] = "NewQuestion"
 
+    # STATE MACHINE
+    action = request.form.get("action") if request.method == "POST" else None
+
+    if action == "next" and session["SingleQuestionState"] == "Answered":
+        session["progress"] += 1
+        session["SingleQuestionState"] = "ToNewQuestion"
+        session.modified = True
+        return redirect(url_for("question"))
+
     question = session["quizQuestions"][session["progress"]]
     form = QuestionFetch.getQuestionForm(question)
 
-    # STATE MACHINE
-    if request.method == "POST":
-        action = request.form.get("action")
-        if action == "next" and session["SingleQuestionState"] == "Answered":
-            session["progress"] += 1
-            session["SingleQuestionState"] = "ToNewQuestion"
-            session.modified = True
-            return redirect(url_for("question"))
-        if action == "submit" and session["SingleQuestionState"] == "NewQuestion" and form.validate_on_submit():
-            correct = form.correct
-            answers = form.answer.data
-            if not isinstance(answers, list):
-                answers = [answers]
-            answers = [answer.replace('\r\n', '\n') for answer in answers]
-            isCorrect = set(answers) == set(correct)
-            session["quizGivenAnswers"][session["progress"]] = answers
-            session["correctness"][session["progress"]] = isCorrect
-            session["SingleQuestionState"] = "Answered"
-            session.modified = True
+    if action == "submit" and session["SingleQuestionState"] == "NewQuestion" and form.validate_on_submit():
+        correct = form.correct
+        answers = form.answer.data
+        if not isinstance(answers, list):
+            answers = [answers]
+        answers = [answer.replace('\r\n', '\n') for answer in answers]
+        isCorrect = set(answers) == set(correct)
+        session["quizGivenAnswers"][session["progress"]] = answers
+        session["correctness"][session["progress"]] = isCorrect
+        session["SingleQuestionState"] = "Answered"
+        session.modified = True
 
     if session["SingleQuestionState"] == "Answered":
         isCorrect = session["correctness"].get(session["progress"], False)
@@ -214,42 +217,83 @@ def question():
             "individualQuestion.html",
             title="Question",
             form=form,
-            status="Please answer the question.",
+            status="",
             showingAnswer=False,
             currentQuestion=session["progress"] + 1,
             totalQuestions=len(session["quizQuestions"]),
         )
 
-
 @app.route("/quiz", methods=["GET", "POST"])
 def quiz():
     tags = supabase_client.FetchUsedTags()
-    types = ["multiple_choice", "multiple_select", "short_answer", "true_false"]
+    types = [
+        "multiple_choice",
+        "multiple_select",
+        #"short_answer", until we have good ones
+        "true_false"
+    ]
     languages = ["Python", "C++"]
     ts = [(tag["id"], tag["name"]) for tag in tags]
     form = SetupQuizForm(types=types, tags=ts, languages=languages)
-    if "quizQuestions" in session:
-        session.pop("quizQuestions")
-    if "SingleQuestionState" in session:
-        session.pop("SingleQuestionState")
-    if "progress" in session:
-        session.pop("progress")
-    if "quizGivenAnswers" in session:
-        session.pop("quizGivenAnswers")
-    if "correctness" in session:
-        session.pop("correctness")
+    for key in ["quizQuestions", "SingleQuestionState", "progress", "quizGivenAnswers", "correctness", "seed", "quizParameters"]:
+        session.pop(key, None)  # None default avoids KeyError check
+
+    if len(request.args.keys()) > 0:
+        newseed = makeSeed()
+        tag: list[str] = [name for id, name in ts]
+
+        argTags = request.args.getlist('tags')
+        argTypes = request.args.getlist('types')
+        argLangs = request.args.getlist('languages')
+        argSeed = request.args.get('seed')
+
+        count = int(request.args.get('count', default = 10))
+        seed = int(argSeed) if argSeed else newseed
+        tags = argTags if argTags else tag
+        types = argTypes if argTypes else types
+        languages = argLangs if argLangs else languages
+
+        session["quizQuestions"] = QuestionFetch.getRandomQuestions(
+            count=count,
+            tags=tags,
+            types=types,
+            languages=languages,
+            seed=seed
+        )
+
+        session["quizParameters"] = {
+            "count": int(request.args.get('count', default = 10)),
+            "tags": argTags if argTags else tag,
+            "types": types,
+            "languages": languages,
+            "seed": seed
+        }
+        return redirect(url_for('question'))
+
     if form.validate_on_submit():
-        print(form.tagSelection.data, form.questionTypes.data)
         t = form.tagSelection.data
         types = form.questionTypes.data
         count = form.questionCount.data
         languageSel = form.languageSelection.data
         seed = form.seed.data if form.seed.data else makeSeed()
         session["seed"] = seed
-        print(t)
-        if t is not None and types is not None and count is not None:
-            tag = [ts[int(id)-1][1] for id in t]
-            session["quizQuestions"] = QuestionFetch.getRandomQuestions(count=count, tags=tag, types=types, languages=languageSel, seed=seed)
+        if t is not None and types is not None and languageSel is not None and count is not None:
+            ts_dict = {str(tag_id): name for tag_id, name in ts}
+            tag = [ts_dict[id] for id in t]
+            session["quizQuestions"] = QuestionFetch.getRandomQuestions(
+                count=count,
+                tags=tag,
+                types=types,
+                languages=languageSel,
+                seed=seed
+            )
+            session["quizParameters"] = {
+                "count": count,
+                "tags": tag,
+                "types": types,
+                "languages": languageSel,
+                "seed": seed
+            }
         return redirect(url_for("question"))
     return render_template("QuizSetup.html", tags=tags, form=form)
 
