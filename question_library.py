@@ -1,11 +1,10 @@
 ﻿# Purpose:
-# This module defines reusable generation helpers used by the template engine
+# This module defines the callable functions to be used in the template text
 
-# Function:
-# - Stores generated UInt values with both numeric value and variable display name
-# - Generates random UInt values from a provided name and numeric range
-# - Provides comparison helpers used inside template expressions
-# - Builds incorrect-answer permutations from a formatting template
+# Features:
+# - Write functions in this file to create more functions to be called in the templates
+# - If function uses random, add rng: random.Random as a parameter so it can be seeded from the outside (database random interaction functions, will not be seeded though)
+# - Functions that interact with the database should call a supabase_client function for interaction for organization purposes
 
 from __future__ import annotations
 
@@ -17,7 +16,7 @@ from typing import Any                          # Any keeps helper signatures fl
 from jinja2 import Environment, StrictUndefined # Jinja is used to render formatting strings safely
 import supabase_client                          # Supabase client is used for random names from the database
 
-
+# ____________________________________________ DATA CLASSES _________________________________________
 # UNumberValue stores both the value and the variable name seen by users
 @dataclass
 class UNumberValue:
@@ -92,7 +91,7 @@ class Name:
 
 # ____________________________________________ DATA TYPE HELPERS _________________________________________
 
-# Canonical C++-style data types and their typical sizes (in bytes) for 64-bit environments.
+# Canonical C++-style data types and their typical sizes (in bytes) for 64-bit environments
 _DATA_TYPES: dict[str, int] = {
     "char": 1,
     "bool": 1,
@@ -106,6 +105,7 @@ _DATA_TYPES: dict[str, int] = {
 # ____________________________________________ VALUE GENERATORS _________________________________________
 
 # ================ UInt: CREATES A RANDOM UNSIGNED INTEGER WITH EXPLICIT NAME AND RANGE ================
+# Important function. Use it when you want random int value
 # Use: UInt(myVar, 4, 10)
 def UInt(
     name: str = "value",
@@ -124,6 +124,7 @@ def UInt(
 
 
 # ================ UFloat: CREATES A RANDOM UNSIGNED FLOAT WITH EXPLICIT NAME AND RANGE ================
+# Important function as well. Sometimes you want a random float value
 # Use: UFloat(myVar, 0.0, 10.0, 2)
 def UFloat(
     name: str = "value",
@@ -144,6 +145,7 @@ def UFloat(
     return UNumberValue(value=randomValue, name=name)
 
 # ================ LoopInt: CREATES A RANDOMIZED LOOP VARIABLE CONFIGURATION ================
+# Pretty cool function. Need this if you want to use randomLoop and loopPrint. Look at LoopIntValue for the properties you can reference
 # Use: LoopInt(i, 0, 4, 8, 20, 1, 3, True)
 # Args: LoopInt(name, startMin, startMax, endMin, endMax, stepMin, stepMax, allowDecrement)
 def LoopInt(
@@ -204,6 +206,7 @@ def LoopInt(
     raise ValueError("LoopInt could not generate a non-empty loop with the provided bounds.")
 
 # ================ nameGen: GENERATES A RANDOM FULL NAME OBJECT ================
+# Sweet func. Gets random name from database. Access it like {{ name.first }} and so on
 # Use: nameGen()
 def nameGen() -> Name:
     record = supabase_client.FetchRandomName()
@@ -221,6 +224,7 @@ def nameGen() -> Name:
     return Name(first=first, middle=middleInitial, last=last)
 
 # ================ charGen: GENERATES A SIMPLE LOWERCASE LETTER ================
+# Also sweet func. If I don't care about the names in UInt() or UFloat(), I just write charGen() there, but it's also just an easy thing to randomize in questions, yknow
 # Use: charGen(var1.name) -> "a" or "b" or ... "z"; for simple variable names or character-based questions
 def charGen(*exclude: str, rng: random.Random | None = None) -> str:
     excluded = {c.lower() for c in exclude if len(c) == 1}              # normalize exclusion set
@@ -231,6 +235,7 @@ def charGen(*exclude: str, rng: random.Random | None = None) -> str:
     return rng.choice(pool)                                             # returns a random letter from the remaining pool
 
 # ================ greaterThan: RETURNS A RANDOM INTEGER THAT IS STRICLY GREATER THAN THE BASE ================
+# Just gives you a number bigger than what your arg is. Sometimes you just want to make a array with ascending numbers
 # Use: greaterThan(myVar) or greaterThan(5)
 def greaterThan(base: Any, rng: random.Random | None = None) -> Any:
     rng = rng or random
@@ -247,6 +252,7 @@ def greaterThan(base: Any, rng: random.Random | None = None) -> Any:
 
 
 # ================ lessThan: RETURNS A RANDOM INTEGER THAT IS STRICLY LESS THAN THE BASE ================
+# Numebr less than what your arg is. Pretty cool, pretty cool
 # Use: lessThan(myVar) or lessThan(5)
 def lessThan(base: Any, rng: random.Random | None = None) -> Any:
     rng = rng or random
@@ -271,6 +277,7 @@ def lessThan(base: Any, rng: random.Random | None = None) -> Any:
 
 
 # ================ choose: RETURNS ONE LABELED OPTION FOR TEMPLATE CONDITION LOGIC ================
+# S++ TIER FUNCTION. If you need to change the logic of the question randomly, and base answers of that randomness, this is the PERFECT FUNCTION
 # Use: whichWay = choose(("does not", False), ("does", True))
 def choose(*options: tuple[Any, Any], rng: random.Random | None = None) -> ChoiceValue:
     if not options:                                                             # Validates that at least one option is provided
@@ -287,6 +294,7 @@ def choose(*options: tuple[Any, Any], rng: random.Random | None = None) -> Choic
     return rng.choice(normalized)                                               # Returns one random option for use in templates
 
 # ================ chooseMultiple: RETURNS MULTIPLE LABELED OPTIONS FOR TEMPLATE CONDITION LOGIC ================
+# ALSO A REALLY GOOD FUNCTION. If you're doing a multiple_select question, and need multiple answers and incorrect options, use this
 # Use: chMult = choose(2, ("does not", False), ("does", True), ("monkey", True))
 def chooseMultiple(count: int, *options: tuple[Any, Any], rng: random.Random | None = None) -> list[ChoiceValue]:
     if count < 1:
@@ -309,6 +317,7 @@ def chooseMultiple(count: int, *options: tuple[Any, Any], rng: random.Random | N
 
 
 # ================ randomDataType: RETURNS A RANDOM DATA TYPE STRING ================
+# Cool if you want to display a random C++ variable declaration, that's all i've used it for
 # Use: randomDataType() or randomDataType("double", "float")
 def randomDataType(*exclude: str, rng: random.Random | None = None) -> str:
     if not _DATA_TYPES:
@@ -327,6 +336,7 @@ def randomDataType(*exclude: str, rng: random.Random | None = None) -> str:
 # ____________________________________________ VALUE METHODS _________________________________________
 
 # ================ lines: JOINS MULTIPLE STRINGS WITH NEWLINES ================
+# Sweet way to output multiple lines. Kinda needed this in the answer/incorrect section, because that section gets parsed so literally
 # Use: lines("line one", "line two") -> "line one\nline two"
 def lines(*parts: Any) -> str:
     if not parts:                                                       # validates at least one part is provided
@@ -335,6 +345,7 @@ def lines(*parts: Any) -> str:
     return "\n".join(str(part) for part in parts)                       # joins parts with newline characters
 
 # ================ sizeOfCalc: RETURNS TOTAL SIZE FOR A TYPE AND COUNT ================
+# In case you gotta write low-level size of types or array questions
 # Use: sizeOfCalc("double", 20)
 def sizeOfCalc(typeName: str, count: int) -> int:
     if not isinstance(typeName, str) or not typeName.strip():
@@ -349,6 +360,7 @@ def sizeOfCalc(typeName: str, count: int) -> int:
     return _DATA_TYPES[key] * count
 
 # ================ repeat: REPEATS A VALUE A FIXED NUMBER OF TIMES ================
+# It's alright, I think i only used it for one template, but i mean hey, if you guys want to use it
 # Use: repeat("0", 4) -> "0 0 0 0"
 def repeat(value: Any, count: int) -> str:
     if not isinstance(count, int) or count < 0:
@@ -361,6 +373,7 @@ def repeat(value: Any, count: int) -> str:
     return " ".join([token] * count)
 
 # ================ randIntArray: GENERATES A RANDOM INT LIST ================
+# Kind of cool, a little gimmicky. If you need just some random to look unique, use this + arrayDec
 # Use: randIntArray(4, 8, 1, 20, True)
 def randIntArray(
     sizeMin: int,
@@ -387,6 +400,7 @@ def randIntArray(
     return [rng.randint(valueMin, valueMax) for _ in range(size)]
 
 # ================ arrayDec: BUILDS A C++ ARRAY DECLARATION STRING ================
+# It's alright, nothing crazy. If you want an array dec + initialization to look random
 # Use: arrayDec("int", "values", [2, 6, 10, 14])
 def arrayDec(typeName: str, name: str, values: list[Any]) -> str:
     if not isinstance(typeName, str) or not typeName.strip():
@@ -400,6 +414,7 @@ def arrayDec(typeName: str, name: str, values: list[Any]) -> str:
     return f"{typeName} {name}[{len(values)}] {{{joined}}};"
 
 # ================ randomLoop: CREATES A DYNAMIC LOOP RENDER GIVEN A LOOP INTEGER AND BODY (C++ ONLY FOR NOW!!!!) ================
+# Cool in concept, i thought i would use it more but i didnt really. You just feed it one of your LoopIntValues, the body of what you want in the loop, and you get a random looking loop for your question (cpp only)
 # Use: randLoopVar = randomLoop(loopIntValue, loopBodyString1, loopBodyString2, ...)
 def randomLoop(loopInt: LoopIntValue, *bodyLines: str, rng: random.Random | None = None) -> str:
     # Validates loop variable type for predictable rendering.
@@ -450,6 +465,7 @@ def randomLoop(loopInt: LoopIntValue, *bodyLines: str, rng: random.Random | None
     )
 
 # ================ compareStrings: COMPARES TWO STRINGS BASED ON A GIVEN OPERATOR ================
+# If you want to randomize comparison operators with choose(), you need this for logic in jinja conditionals because those are just rendered as strings
 # Use: compareStrings("apple", "banana", "<") -> True
 def compareStrings(a: str, b: str, op: str) -> bool:
     if op == "==":
@@ -468,6 +484,7 @@ def compareStrings(a: str, b: str, op: str) -> bool:
         raise ValueError(f"Unsupported comparison operator: {op}")
 
 # ================ combinations: RENDERS UNIQUE PERMUTATIONS FROM A JINJA FORMAT STRING AND SOURCE VALUES ================
+# Thought it would be more useful, but i didn't use too much. Just gives you unique permutations of your specified pattern. Check default template to see
 # Use: combinations("{{ x }} {{ y }}", var1, var2, ...)
 def combinations(
     formatString: str,
@@ -512,6 +529,8 @@ def combinations(
 
 
 # ================ loopPrint: RENDERS A FORMAT STRING USING NESTED LOOP VARIABLE ITERATION ORDER ================
+# Honestly really cool function. Simulates the loop (even nested loop, up to 4 loops) and runs throught their values.
+# You can specify the output of what it looks like and how it uses the current loop values with a jinja string
 # Use: loopPrint(formatJinjaString, loopInt1, loopInt2, ...)
 def loopPrint(formatString: str, *loopVars: Any) -> str:
     if len(loopVars) > 4:                                                   # Validates max loop count to be less than 4 (there's no way there's going to be a question with 5 and greater nested loops right??)
