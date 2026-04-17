@@ -1,3 +1,6 @@
+# Purpose:
+# This module defines any and all database interaction. All queries will be written here.
+
 from supabase import create_client, Client
 import os
 import time
@@ -17,6 +20,7 @@ key = os.getenv("SUPABASE_KEY")
 
 ctrlDB: Client = create_client(url, key)
 
+# A simple User class using Flask's UserMixin thing. It's got the is_authenticated, is_active, is_anonymous, get_id() stuff
 class User(UserMixin):
     def __init__(self, username: str, role: str):
         # Flask-Login stores this in the session
@@ -25,6 +29,8 @@ class User(UserMixin):
         self.role = role
 
 # ================ retryQuery: RETRIES THE QUERY 6 TIMES VIA DELAY TO DEAL WITH CONCURRENT REQUESTS ================
+# With how busy our database should be (still untested) we need to make we don't server error immediately when busy.
+# You should use this helper function for every query as it retries multiple times at increasing delays for randomness
 # USE: retryQuery(lambda: ctrlDB.table("questions").select("*").execute())
 # the lambda thing is so that the following code is not executed until inside the retryQuery function
 def retryQuery(op, *, attempts=6, baseDelay=0.2, maxDelay=2.0):
@@ -44,6 +50,7 @@ def retryQuery(op, *, attempts=6, baseDelay=0.2, maxDelay=2.0):
 
 
 # ================ FetchAllQuestions: FETCH ALL QUESTIONS FROM "questions" TABLE ================
+# When you want all the Questions. It's for the template builder page, that's why we also get the title of the question for display
 def FetchAllQuestions() -> list[dict[str, Any]]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -61,6 +68,7 @@ def FetchAllQuestions() -> list[dict[str, Any]]:
     return []
 
 # ================ FetchQuestionById: FETCH A SINGLE QUESTION BY ID FROM "questions" TABLE ================
+# When you want the sweet details of a question, get it by it's id here
 def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -83,6 +91,7 @@ def FetchQuestionById(questionId: int) -> dict[str, Any] | None:
     return None
 
 # ================ FetchQuestionById: FETCH MULTIPLE QUESTIONS BY IDS FROM "questions" TABLE ================
+# Quick way to get multiple questions by their ids
 def FetchQuestionsByIds(questionIds: list[int]) -> list[dict[str, Any]]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -109,6 +118,7 @@ def FetchQuestionsByIds(questionIds: list[int]) -> list[dict[str, Any]]:
     return [questionMap[qId] for qId in questionIds if qId in questionMap]
 
 # ================ SaveQuestion: SAVE QUESTION TO "questions" TABLE IN DATABASE ================
+# Adds an entry in the "questions" table with the given information
 def SaveQuestion(
     title: str,
     promptTemplate: str,
@@ -150,6 +160,7 @@ def SaveQuestion(
 
 
 # ================ UpdateQuestion: UPDATE QUESTION IN "questions" TABLE ================
+# Updates in entry in the "questions" table with the given information
 def UpdateQuestion(
     questionId: int,
     title: str,
@@ -188,6 +199,7 @@ def UpdateQuestion(
 
 
 # ================ DeleteQuestion: DELETE QUESTION FROM "questions" TABLE ================
+# Deletes a question
 def DeleteQuestion(questionId: int) -> None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -199,6 +211,7 @@ def DeleteQuestion(questionId: int) -> None:
 
 
 # ================ SetQuestionTags: REPLACE TAG MAPPINGS FOR A QUESTION ================
+# For setting tags of a question; delete old ones, write new ones
 def SetQuestionTags(questionId: int, tagIds: list[int]) -> None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -218,6 +231,7 @@ def SetQuestionTags(questionId: int, tagIds: list[int]) -> None:
         raise RuntimeError(f"Supabase insert failed: {insertError}")
 
 # ================ FetchFilteredQuestions: FETCH ALL QUESTIONS BASED ON FILTERS ================
+# Important function for the quiz pre-selection stage filters
 def FetchFilteredQuestions(tags: list[str], questionTypes: list[str], languages: list[str]) -> list[int]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -263,6 +277,7 @@ def FetchFilteredQuestions(tags: list[str], questionTypes: list[str], languages:
 
 
 # ================ FetchAllTags: FETCH ALL TAGS FROM "tags" TABLE ================
+# When you need to list all tags
 def FetchAllTags() -> list[dict[str, Any]]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -279,6 +294,7 @@ def FetchAllTags() -> list[dict[str, Any]]:
     return []
 
 # ================ FetchUsedTags: FETCH ALL TAGS FROM "tags" TABLE, and compare with tags present in question_tags ================
+# When you need to list tags that actually have questions
 def FetchUsedTags() -> list[dict[str, Any]]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -305,35 +321,8 @@ def FetchUsedTags() -> list[dict[str, Any]]:
 
     return filtered_tags
 
-# ================ FetchUsedTags: FETCH ALL TAGS FROM "tags" TABLE, and compare with tags present in question_tags ================
-def FetchAllQuestionTypes() -> list[dict[str, Any]]:
-    if not url or not key:
-        raise RuntimeError("Supabase credentials are missing.")
-
-    usedTagsResponse = retryQuery(lambda: ctrlDB.table("question_tags").select("tag_id").order("tag_id").execute())
-    fetchError = getattr(usedTagsResponse, "error", None)
-    if fetchError:
-        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
-    usedTags = getattr(usedTagsResponse, "data", None)
-    if not isinstance(usedTags, list):
-        return []
-
-    response = retryQuery(lambda: ctrlDB.table("tags").select("id,name,category").order("id").execute())
-    fetchError = getattr(response, "error", None)
-    if fetchError:
-        raise RuntimeError(f"Supabase fetch failed: {fetchError}")
-
-    allTags = getattr(response, "data", None)
-    if not isinstance(allTags, list):
-        return []
-
-    unique_ids = {d['tag_id'] for d in usedTags}
-    filtered_tags = [tag for tag in allTags if tag['id'] in unique_ids]
-
-    return filtered_tags
-
-
 # ================ FetchTagIdsForQuestion: FETCH TAG IDS FOR A QUESTION ================
+# For getting the set tags of a question
 def FetchTagIdsForQuestion(questionId: int) -> list[int]:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -350,6 +339,7 @@ def FetchTagIdsForQuestion(questionId: int) -> list[int]:
     return []
 
 # ================ FetchRandomName: FETCH ONE RANDOM NAME FROM "randomnames" TABLE ================
+# Gets a random name
 def FetchRandomName() -> dict[str, Any] | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -370,6 +360,7 @@ def FetchRandomName() -> dict[str, Any] | None:
     return None
 
 # ================ AuthenticateUser: AUTHENTICATE USERNAME + PASSWORD FOR LOGIN ================
+# We need to check the user/pass combination with the hashed password in the users table
 def AuthenticateUser(username: str, raw_password: str) -> User | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
@@ -401,6 +392,7 @@ def AuthenticateUser(username: str, raw_password: str) -> User | None:
 
 
 # ================ LoadUser: LOAD USER FOR FLASK-LOGIN SESSION ================
+# Flask expects a function to load user info from a database. This is that logic.
 def LoadUser(user_id: str) -> User | None:
     if not url or not key:
         raise RuntimeError("Supabase credentials are missing.")
