@@ -1,12 +1,21 @@
 ﻿# Purpose:
-# This module parses the custom question template format and generates rendered output
+# This module parses the custom question template format and generates rendered output for with generateQuestion() which will be used outside of this module
 
-# Function:
-# - Splits full template text into variables/question/answer/incorrect sections
-# - Evaluates variable calls dynamically against question_library
-# - Renders question and answer text using Jinja blocks
-# - Generates incorrect answers from line-by-line function calls
-# - Returns user-facing parse/render errors as: ERROR at: <line content>
+# Features (read this for tldr, good luck):
+# - Section-based templates: one big template gets split into `variables:`, `question:`, `answer:`, and `incorrect:` blocks
+# - Variables create a shared `context`: the `variables` block runs first and builds a dictionary of values other blocks can reuse
+# - Nested library calls (in variables): variable expressions are evaluated as Python-style expressions, so you can do things like `x = UInt(nameGen(), 1, 50)`
+# - Seeded randomness support: `generateQuestion(seed=...)` creates one RNG and passes it into library functions that accept `rng`, so results can be repeatable
+# - Jinja text rendering: supports `{{ varName }}` substitutions
+# - Jinja control blocks (answers/prompt/feedback): if you use `{% if %}` / `{% for %}`, the engine renders the block first, then runs any library-call lines after
+# - Library calls as lines: in answer/incorrect/prompt/feedback, a line like `UInt(1, 10)` executes a `question_library` function and turns the result into output text
+# - Library calls inside `{{ }}`: templates can call library functions inline (they’re exposed to Jinja), and the engine also has logic to avoid calling them “too early” in block renders
+# - Simple argument parsing: supports positional args plus a light named-arg syntax like `key: value`
+# - Basic value types: argument tokens understand quoted strings, ints, floats, `True`/`False`, `None`, and references to existing context variables
+# - Dotted lookups: supports simple attribute paths like `obj.attr` (and `obj.attr.subattr`) for reading values from context objects
+# - Multi-line indentation preservation: multi-line outputs can keep indentation using the `indent_after_newline` filter, and the engine can auto-inject it for indented `{{ ... }}`
+# - List-return support: if a library function returns a list, it’s treated as “multiple candidate outputs” (answers pick the first; incorrect picks a random non-duplicate)
+# - Consistent error reporting: most failures become `TemplateProcessingError("ERROR at: <the line>")` so you see the template line that likely caused it
 
 from __future__ import annotations
 
@@ -18,7 +27,6 @@ import random                          #Random selects one option per incorrect-
 from typing import Any                 #Any allows simple extension for future variable types
 from jinja2 import Environment, StrictUndefined, TemplateSyntaxError    #Jinja renders template text and reports syntax issues
 import question_library                                                 #Question library module is imported directly for dynamic function lookup
-from question_library import UIntValue                                  #UIntValue type is used for serialization checks
 
 
 # TemplateProcessingError provides one consistent error type for the app layer
@@ -34,14 +42,30 @@ class TemplateSections:
     incorrect: str
 
 
-# sectionHeaders defines the only valid root block names.
+# sectionHeaders defines the only valid root block names
 sectionHeaders = {"variables", "question", "answer", "incorrect"}
 
 
 # ____________________________________ LIBRARY INTERACTION FUNCTIONS SECTION ____________________________________
 
 # ================ getLibraryFunctionRegistry: DISCOVERS CALLABLE FUNCTIONS FROM LIBRARY =============
+# This is KEY for context. The “allowed functions” list for the engine — it’s the one place we discover what the template can actually call
+# If we’re running with a seeded RNG, we also pre-bind it here so every library call in one generation shares the same randomness source
 # returns a dictionary of function names and their associated functions. e.g. registry["loopPrint"]("{{ var1 }} {{ var2 }}", var1, var2)
+def getLibraryFunctionRegistry(rng: random.Random | None = None) -> dict[str, Any]:
+    registry: dict[str, Any] = {}
+    for name, member in inspect.getmembers(question_library, inspect.isfunction):
+        if name.startswith("_"):                # don't add functions that start with _ to the registry, in case we want any private functions
+            continue
+        if rng is None:
+            registry[name] = member
+        else:
+            registry[name] = bindRngToFunction(member, rng)
+    return registry
+
+# ================ bindRngToFunction: BIND RNG TO LIBRARY FUNCTION CALL =============
+# This is a small adapter so library functions can stay “normal” (no rng param) but we can still force a shared RNG when they *do* accept it
+# We only wrap when the function can take `rng`, so existing calls/signatures don’t get broken for no weird reason
 def bindRngToFunction(function: Any, rng: random.Random) -> Any:
     signature = inspect.signature(function)
     acceptsRng = "rng" in signature.parameters
@@ -62,19 +86,9 @@ def bindRngToFunction(function: Any, rng: random.Random) -> Any:
     return wrapped
 
 
-def getLibraryFunctionRegistry(rng: random.Random | None = None) -> dict[str, Any]:
-    registry: dict[str, Any] = {}
-    for name, member in inspect.getmembers(question_library, inspect.isfunction):
-        if name.startswith("_"):                # don't add functions that start with _ to the registry, in case we want any private functions
-            continue
-        if rng is None:
-            registry[name] = member
-        else:
-            registry[name] = bindRngToFunction(member, rng)
-    return registry
-
-
 # ================ simpleSplitArgs: SPLITS ARGUMENTS BY COMMA (NESTED + QUOTED SAFE) ================
+# We can’t just do `split(",")` because commas show up inside nested calls and inside quotes, so this is for that
+# This walks the text and only splits on top-level commas, so stuff like `UInt(nameGen(), 1, 50)` stays one argument
 # returns a list of argument tokens, respecting nested parentheses and quoted strings.
 # e.g. simpleSplitArgs('UInt(nameGen(), 1, 50), "a,b", x') -> ['UInt(nameGen(), 1, 50)', '"a,b"', 'x']
 def simpleSplitArgs(argumentText: str) -> list[str]:
@@ -140,6 +154,8 @@ def simpleSplitArgs(argumentText: str) -> list[str]:
 
 
 # ================ parseArgumentValue: CONVERTS SIMPLE TOKENS TO PYTHON VALUES ================
+# Converts a raw argument token into a real Pythonish value (numbers/bools/None/strings) so templates don’t have to be overly strict
+# Also lets args reference values already in `context` (and simple `var.attr` chains) without needing to `eval` arbitrary Python
 # returns the best-effort Python value for a token (strings, numbers, booleans, None, context vars)
 # e.g. parseArgumentValue('"hi"', ctx) -> "hi", parseArgumentValue("count", ctx) -> ctx["count"]
 def parseArgumentValue(valueText: str, context: dict[str, Any]) -> Any:
@@ -175,6 +191,8 @@ def parseArgumentValue(valueText: str, context: dict[str, Any]) -> Any:
     return text
 
 # ================ resolveDottedValue: RESOLVES DOTTED ATTRIBUTE PATHS FROM CONTEXT ================
+# Helper for the `var.attr.subattr` case. I just wante straightforward attribute walking so it’s predictable
+# If any part of the chain doesn’t exist, we fail with a clear “that's not right bro (not valid attribute path)” type of error
 def resolveDottedValue(pathText: str, context: dict[str, Any]) -> Any:
     parts = pathText.split(".")
     rootName = parts[0]
@@ -191,6 +209,8 @@ def resolveDottedValue(pathText: str, context: dict[str, Any]) -> Any:
 
 
 # ================ parseFunctionArguments: PARSES POSITIONAL + MINIMAL NAMED ARGUMENTS ================
+# Jinja/function-call lines give us one big `argumentText` string; this is the “split, classify, convert” step before calling anything
+# Supports a lightweight named-arg style with `key: value` so templates can be readable without needing full Python syntax (it can do this but I've written like 40 templates with only positional args)
 def parseFunctionArguments(argumentText: str, context: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
     # Initialize containers for positional arguments and keyword arguments.
     positionalArgs: list[Any] = []
@@ -209,6 +229,8 @@ def parseFunctionArguments(argumentText: str, context: dict[str, Any]) -> tuple[
 
 
 # ================ callLibraryFunctionByName: EXECUTES ONE LIBRARY FUNCTION BY NAME ================
+# SUPER DUPER IMPORTATN: We already set up out callable functions with getLibraryFunctionRegistry, so this is for executing `SomeFunc(...)` from the template: lookup, parse args, and call
+# Also handles the “assigning to a variable” case by injecting `name=<var>` (when the target function supports it) so library code can label outputs
 # e.g. callLibraryFunctionByName("UInt", 'nameGen(), 1, 50', ctx, registry, targetVarName="x")
 def callLibraryFunctionByName(
     functionName: str,
@@ -256,54 +278,16 @@ def callLibraryFunctionByName(
 # ____________________________________________ PARSING HELPER FUNCTIONS SECTION _________________________________________
 
 # ================ errorAt: GENERALIZES ERROR REPORTING (NOT REALLY SMART) ================
+# Tiny convenience so all parsing/execution errors look consistent and point at the exact line that caused it
+# Honestly not that helpful, I've come to realize, when trying to debug the logic of this sort of "tiny language" we've written, but it is what it is
 # e.g. errorAt("someFunction(x, y)") -> TemplateProcessingError("ERROR at: someFunction(x, y)")
 def errorAt(lineContent: str) -> TemplateProcessingError:
     return TemplateProcessingError(f"ERROR at: {lineContent.rstrip()}")
 
 
-# ================ normalizeLineExpression: FIXES NESTED QUOTES INSIDE line("...") ================
-# returns a safe Python expression for line(...) when the format string contains unescaped quotes.
-# e.g. line("std::cout << "Hello {{ var1 }}""") -> line('''std::cout << "Hello {{ var1 }}'''")
-def normalizeLineExpression(expression: str) -> str:
-    stripped = expression.strip()
-    if not stripped.startswith("line(") or not stripped.endswith(")"):
-        return expression
-
-    inner = stripped[len("line(") : -1].strip()
-    if len(inner) < 2:
-        return expression
-
-    quote = inner[0]
-    if quote not in {"'", '"'} or inner[-1] != quote:
-        return expression
-
-    content = inner[1:-1]
-    escaped = False
-    has_unescaped_quote = False
-    for ch in content:
-        if escaped:
-            escaped = False
-            continue
-        if ch == "\\":
-            escaped = True
-            continue
-        if ch == quote:
-            has_unescaped_quote = True
-            break
-
-    if not has_unescaped_quote:
-        return expression
-
-    # Swap to triple quotes to allow nested quotes inside the format string.
-    if quote == '"':
-        safe = content.replace("'''", "\\'\\'\\'")
-        return f"line('''{safe}''')"
-
-    safe = content.replace('"""', '\\"""')
-    return f'line("""{safe}""")'
-
-
 # ================ indentAfterNewline: INDENTS MULTI-LINE INSERTS TO MATCH THEIR LINE ================
+# When a placeholder expands to multiple lines, we want the extra lines to keep the same indent as the placeholder line
+# This is what stops multi-line library outputs (loops/blocks/etc.) from wrecking indentation in generated code
 # returns a string where every newline is followed by the given indent
 # e.g. indentAfterNewline("a\nb", "    ") -> "a\n    b"
 def indentAfterNewline(value: Any, indent: str) -> str:
@@ -313,6 +297,7 @@ def indentAfterNewline(value: Any, indent: str) -> str:
     return text.replace("\n", "\n" + indent)
 
 # ================ applyInlineIndentFilter: WRAPS INLINE JINJA BLOCKS WITH INDENT FILTER ================
+# Kind of gimmicky, but because some functions like randomLoop() return multi line strings, we want a way to keep the tab context. This is for that.
 # Injects an indent filter into {{ ... }} expressions that start a line with whitespace.
 # This makes multi-line inserts keep the same tab/space prefix as the placeholder line.
 def applyInlineIndentFilter(templateText: str) -> str:
@@ -331,6 +316,9 @@ def applyInlineIndentFilter(templateText: str) -> str:
 # ____________________________________________ TEMPLATE PARSING SECTION _________________________________________
 
 # ================ parseSections: SEPARATES PLAIN TEXT TEMPLATE INTO NAMED SECTION STRINGS ================
+# Okay, so the process for this is within our ONE template text area. That should contain clear defined sections of variables, question, answer, and incorrect.
+# Reference template_builder.py for the default template that's there. These sections will be individually parsed and handled via the functions below.
+# This is not too UI friendly SO IF YOU WANT MORE TEXT AREAS, THIS IS WHAT'S BEING USED TO PARSE THE ONE BIG TEXT AREA FOR TEMPLATE INPUT
 def parseSections(templateText: str) -> TemplateSections:
     currentSection: str | None = None                                               # Track which section we're currently collecting lines for
     sectionLines: dict[str, list[str]] = {name: [] for name in sectionHeaders}      # Initialize storage for each required template section
@@ -363,6 +351,8 @@ def parseSections(templateText: str) -> TemplateSections:
 
 
 # ================ evaluateVariables: EVALUATES VARIABLE ASSIGNMENT EXPRESSIONS ================
+# This is for the variables section. We want to create a "context" dictionary of values with their
+# keys (variable names) to be referenced when we doing jinja or function calls or whatever
 # Returns a context dict mapping variable names to evaluated values, supports nested library calls and references to previously defined variables
 # e.g. evaluateVariables('x = UInt(nameGen(), 1, 50)')
 def evaluateVariables(variablesBlock: str, rng: random.Random | None = None) -> dict[str, Any]:
@@ -380,7 +370,7 @@ def evaluateVariables(variablesBlock: str, rng: random.Random | None = None) -> 
             raise errorAt(rawLine)
 
         varName = assignmentMatch.group(1)
-        expression = normalizeLineExpression(assignmentMatch.group(2))
+        expression = assignmentMatch.group(2)
 
         try:
             # Build a safe evaluation scope for library functions and prior variables
@@ -405,6 +395,8 @@ def evaluateVariables(variablesBlock: str, rng: random.Random | None = None) -> 
 
 
 # ================ renderJinja: RENDERS A TEMPLATE BLOCK WITH STRICT UNDEFINEDS ================
+# This is the main rendering function for question/answer sections, it uses Jinja to render the template text with the provided context and includes error
+# handling to map issues back to the relevant template line for user-friendly feedback (is what i thought at first, but lowkey not that helpful)
 # e.g. renderJinja("Hello {{ name }}", {"name": "Ada"}) -> "Hello Ada"
 # Returns rendered template text, executing a full-line library call if present; used by question/answer/incorrect parsing for consistent Jinja rendering
 # Create a Jinja environment that fails fast on missing variables
@@ -465,7 +457,9 @@ def renderJinja(templateText: str, context: dict[str, Any], rng: random.Random |
 
 
 # ================ deferLibraryCallsInJinja: DEFERS ENGINE CALLS INSIDE {{ }} OR RAW LINES ================
-# Replace {{ func(...) }} with a literal token so Jinja doesn't execute engine calls.
+# This is a preprocessing step before Jinja rendering to turn library calls into inert tokens so Jinja won't try to execute them before variables are resolved.
+# It handles both inline calls within {{ }} and full-line calls that are just a function call with no other text. Atleast it should.
+# Replace {{ func(...) }} with a literal token so Jinja don't execute engine calls.
 # Genuinely had me going insane, I needed so much help from chat
 def deferLibraryCallsInJinja(templateText: str, functionRegistry: dict[str, Any]) -> tuple[str, dict[str, str]]:
     def replaceMatch(match: re.Match) -> str:
@@ -498,6 +492,8 @@ def deferLibraryCallsInJinja(templateText: str, functionRegistry: dict[str, Any]
 
 
 # ================ restoreLibraryCallsInJinja: RESTORES DEFERRED ENGINE CALLS ================
+# This is for after Jinja rendering, we want to turn the tokens back to the original function call because Jinja always runs the full
+# block through its engine and we want the library calls to execute against the rendered context with all variables resolved.
 # For lines that were fully deferred, replace the token with the original line; for inline calls, convert the token back to the function call format.
 def restoreLibraryCallsInJinja(renderedText: str, lineMap: dict[str, str]) -> str:
     restored = re.sub(r"__ENGINE_CALL__([A-Za-z_]\w*\(.*?\))__", r"\1", renderedText)
@@ -507,6 +503,8 @@ def restoreLibraryCallsInJinja(renderedText: str, lineMap: dict[str, str]) -> st
 
 
 # ================ evaluateAnswer: EVALUATES EACH ANSWER LINE AS ONE METHOD CALL OR TEXT ================
+# This is called when parsing the answer(also prompt) section. Each line is processed as either a function call (like UInt(1, 3)) or a text line with Jinja rendering (like "The answer is {{ var1 }}"). 
+# For function calls, all candidates are generated but only the first non-empty one is used to allow deterministic multi-line answers when needed.
 # e.g. evaluateAnswer("answerLine1\nfuncCall(x)", ctx) -> ["answerLine1", "<func result>"]
 # Returns a list of answer strings (even if there is only one)
 def evaluateAnswer(answerBlock: str, context: dict[str, Any], rng: random.Random | None = None) -> list[str]:
@@ -541,8 +539,9 @@ def evaluateAnswer(answerBlock: str, context: dict[str, Any], rng: random.Random
     return answerLines                                                  # Return the full list for multi-select support
 
 # ================ evaluateIncorrect: EVALUATES EACH INCORRECT LINE AS ONE METHOD CALL ================
+# This is similar to evaluateAnswer but with additional filtering to ensure no duplicates or correct answers are included, and it selects one random candidate per line to build a pool of incorrect options.
 # e.g. evaluateIncorrect("distract()\nwrong()", ctx, correct) -> ["42", "17"]
-# Returns a list of incorrect options, skipping duplicates and the correct answer
+# Given the incorrect block, context, and correct answers; returns a list of incorrect options, skipping duplicates and the correct answer
 def evaluateIncorrect(
     incorrectBlock: str,
     context: dict[str, Any],
@@ -578,6 +577,7 @@ def evaluateIncorrect(
     return incorrectPool                                                                        # Return the final pool of incorrect answers
 
 # ================ generateFromLine: CALLS ONE LIBRARY METHOD OR RENDERS ONE TEXT LINE ================
+# This will be called when the template line is just a single function call or plain text. Put simply, this is the lowest-level line processing function that generates candidate strings for answer lines or prompt lines.
 # e.g. generateFromLine("UInt(1, 3)", ctx) -> ["2"]
 # Returns a list of candidate strings for a single line (may be empty)
 def generateFromLine(
