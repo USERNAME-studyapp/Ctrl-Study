@@ -270,6 +270,15 @@ button:hover,
     margin-bottom: 5px
 }
 
+/* centering and styling for images */
+.img_center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 5px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+}
+
 /* padding for selection boxes */
 #answer,
 #questionTypes,
