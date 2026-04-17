@@ -11,17 +11,21 @@
 }
 
 /* light mode */
-@media (prefers-color-scheme: light) {
+/*@media (prefers-color-scheme: light) {
     body {
         background-color: #d1d1d1
     }
-}
+}*/
 
 /* dark mode */
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #2e2e2e
     }
+}
+
+body {
+    background-color: #2e2e2e
 }
 
 /* responsiveness */

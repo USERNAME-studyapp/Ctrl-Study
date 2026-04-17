@@ -161,7 +161,7 @@ def quizComplete():
 
 @app.route("/question", methods=["GET", "POST"])
 def question():
-    if "quizQuestions" not in session:
+    if "quizQuestions" not in session or session["quizQuestions"] is None:
         print("User tried to use quiz question page without questions in session")
         return redirect(url_for("quiz"))
     if "progress" not in session:
