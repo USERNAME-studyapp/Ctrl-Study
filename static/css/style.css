@@ -47,6 +47,16 @@ body {
     padding: 0;
 }
 
+/* properties of links  */
+a {
+    color: rgb(209, 209, 209);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 
 /* ANIMATED BACKGROUND BY CHRIS SMITH. LINK: https://codepen.io/chris22smith/pen/RZogMa*/
 
@@ -80,6 +90,85 @@ body {
         transform: translateX(25%);
     }
 }
+
+/* --------- */
+
+/* DEVELOPER CARD MADE BY akshat-patel28 ON uiverse. LINK: https://uiverse.io/akshat-patel28/splendid-mayfly-26 */
+.card {
+    display: flex;
+    flex-direction: column;
+    width: 230px;
+    height: 280px;
+    max-height: 330px;
+    background-color: rgba(195, 194, 194, 0.2);
+    border-radius: 10px;
+    box-shadow: 0px 10px 12px rgba(0, 0, 0, 0.08),
+        -4px -4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s;
+    cursor: default;
+    box-sizing: border-box;
+    padding: 10px;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0px 20px 20px rgba(0, 0, 0, 0.1),
+        -4px -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.card-image-container {
+    width: 100%;
+    height: 64%;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    background-color: rgb(212, 211, 211);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-icon {
+    font-size: 40px;
+}
+
+.card-title {
+    margin: 0;
+    font-size: 17px;
+    font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+        "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+    font-weight: 600;
+    color: #c9d3d6;
+    cursor: pointer;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+}
+
+.card-des {
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    margin: 0;
+    padding-top: 5px;
+    font-size: 15px;
+    font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+        "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+    color: #bbc5c8;
+    cursor: default;
+}
+
 
 /* --------- */
 
