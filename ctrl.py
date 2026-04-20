@@ -268,6 +268,9 @@ def quiz():
             "languages": languages,
             "seed": seed
         }
+
+        session["seed"] = seed
+
         return redirect(url_for('question'))
 
     if form.validate_on_submit():
