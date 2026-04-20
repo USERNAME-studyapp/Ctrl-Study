@@ -56,11 +56,6 @@ class QuestionForm(FlaskForm, Generic[T]):
         highlighted = highlight(self.question, lexer, formatter)
         return highlighted
 
-
-class RussianNestingForm(FlaskForm):
-    forms = FieldList(FormField(QuestionForm), min_entries=1)
-
-
 class RadioQuestionForm(QuestionForm[RadioField]):
     prompt: str
     question: str
