@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import CppLexer, PythonLexer, MarkdownLexer
-from wtforms import Field, RadioField, SubmitField, SelectMultipleField, TextAreaField, FieldList, FormField, validators, widgets
+from wtforms import Field, RadioField, SubmitField, SelectMultipleField, TextAreaField, FieldList, FormField, validators, widgets, StringField
 from wtforms.fields import IntegerField
 from wtforms.validators import DataRequired, Optional, InputRequired
 from typing import TypeVar, Generic
@@ -16,7 +16,7 @@ class SetupQuizForm(FlaskForm):
     tagSelection = MultiCheckboxField("Tag Selection")
     languageSelection = MultiCheckboxField("Programming Language")
     questionCount = IntegerField("Question Count", validators=[DataRequired(), validators.number_range(min=1)], default=10)
-    seed = IntegerField("Seed", validators=[Optional()])
+    seed = StringField("Seed", validators=[Optional()])
 
     submit = SubmitField("Submit")
 
