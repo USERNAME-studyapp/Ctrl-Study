@@ -139,7 +139,7 @@ def quizComplete():
     forms = list[QuestionForm]()
     for index, question in enumerate(session["quizQuestions"]):
         form = QuestionFetch.getQuestionForm(question, label=f"Answers{index}")
-        data: list = [session["quizGivenAnswers"][index] for index, question in enumerate(session["quizQuestions"])]
+        data: list = session["quizGivenAnswers"].get(index, [])
         if isinstance(form, RadioQuestionForm) or isinstance(form, ShortAnswerQuestionForm):
             form.answer.data = data[0]
         else:
