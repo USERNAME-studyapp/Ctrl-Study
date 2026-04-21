@@ -248,7 +248,7 @@ def quiz():
         argSeed = request.args.get('seed')
 
         count = int(request.args.get('count', default = 10))
-        seed = int(argSeed) if argSeed else newseed
+        seed = argSeed if argSeed else newseed
         tags = argTags if argTags else tag
         types = argTypes if argTypes else types
         languages = argLangs if argLangs else languages
