@@ -1,4 +1,4 @@
-/* this is the page change fade animation if you wanna remove it */
+/* this is the page change fade animation*/
 @view-transition {
     navigation: auto;
 }
